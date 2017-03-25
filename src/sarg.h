@@ -322,18 +322,43 @@ class Args {
   		_arguments[iter.first] = iter.second;
   }
 
+  size_t DetermineNumCharsToWrite(const std::string& description) const {
+  	size_t location = 49;
+  	while (std::isalpha(description[location]) && location > 0) --location;
+  	if (location == 0 && std::isalpha(description[location])) return 50;
+  	return location + 1;
+  }
+
   std::string FormatDescription(const std::string& description) const {
   	if (description.size() <= 50) return description;
   	std::stringstream stream;
   	stream.width(50);
   	size_t count = 0;
   	while (count < (description.size() - 50)) {
-  		stream.write(&description[count], 50);
+  		size_t to_write = this->DetermineNumCharsToWrite(description.substr(count));
+
+  		// Determine where to start writing the next line
+  		size_t skip = 0;
+  		while (std::isblank(description[count + skip]) && skip < 50)
+  			++skip;
+
+  		// Don't write a blank line
+  		count += skip;
+  		if (skip == 50)
+  			continue;
+
+  		stream.write(&description[count], to_write);
   		stream << "\n                              ";
-  		count += 50;
+  		count += to_write;
   	}
 
-		stream.write(&description[count], int(description.size() - count));
+		// Determine where to start writing the next line
+		size_t skip = 0;
+		while (std::isblank(description[count]) && count < 50) ++skip;
+		if (skip != 50) {
+			count += skip;
+			stream.write(&description[count], int(description.size() - count));
+		}
   	return stream.str();
   }
 
