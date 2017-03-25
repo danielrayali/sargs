@@ -39,41 +39,74 @@ class Args {
     this->Validate();
   }
 
-  std::string GetAsString(const std::string& flag) const {
-    if (flag.empty()) { throw std::runtime_error("Flag query empty"); }
+  bool GetAsString(const std::string& flag, std::string& value) const {
+		if (flag.empty()) { throw std::runtime_error("Flag query empty"); }
 
-    return _parser.GetValue(flag);
+		auto iter = _arguments.find(flag);
+		if (iter == _arguments.end())
+			return false;
+		value = iter->second;
+		return true;
   }
 
-  float GetAsFloat(const std::string& flag) const {
-    if (flag.empty()) { throw std::runtime_error("Flag query empty"); }
-
-    const std::string value_str(_parser.GetValue(flag));
-    const float value = std::strtof(value_str.c_str(), nullptr);
-    if (errno == ERANGE) {
-      throw std::runtime_error("Could not convert " +  value_str +
-                   " to float");
-    }
-
+  std::string GetAsString(const std::string& flag) const {
+    std::string value;
+    if (!this->GetAsString(flag, value))
+    	throw std::runtime_error(flag + " was not specified");
     return value;
   }
 
-  int64_t GetAsInt64(const std::string& flag) const {
+  bool GetAsFloat(const std::string& flag, float& value) const {
     if (flag.empty()) { throw std::runtime_error("Flag query empty"); }
 
-    const std::string value_str(_parser.GetValue(flag));
-    const int64_t value = std::strtol(value_str.c_str(), nullptr, 0);
+    auto iter = _arguments.find(flag);
+    if (iter == _arguments.end())
+    	return false;
+
+    const std::string value_str(iter->second);
+    const float myvalue = std::strtof(value_str.c_str(), nullptr);
+    if (errno == ERANGE)
+      throw std::runtime_error("Could not convert " +  value_str + " to float");
+
+		value = myvalue;
+		return true;
+  }
+
+  float GetAsFloat(const std::string& flag) const {
+  	float value;
+  	if (!this->GetAsFloat(flag, value))
+    	throw std::runtime_error(flag + " was not specified");
+  	return value;
+  }
+
+  bool GetAsInt64(const std::string& flag, int64_t& value) const {
+    if (flag.empty()) { throw std::runtime_error("Flag query empty"); }
+
+    auto iter = _arguments.find(flag);
+    if (iter == _arguments.end())
+    	return false;
+
+    const std::string value_str(iter->second);
+    const int64_t myvalue = std::strtol(value_str.c_str(), nullptr, 0);
     const bool range_error = (errno == ERANGE);
-    if (range_error || (value == 0 && flag != "0")) {
+    if (range_error || (myvalue == 0 && flag != "0")) {
       throw std::runtime_error("Could not convert " +  value_str +
                    " to int64_t");
     }
 
-    return value;
+    value = myvalue;
+    return true;
+  }
+
+  int64_t GetAsInt64(const std::string& flag) const {
+  	int64_t value;
+  	if (!this->GetAsInt64(flag, value))
+    	throw std::runtime_error(flag + " was not specified");
+  	return value;
   }
 
   bool Has(const std::string& flag) const {
-  	return _parser.Has(flag);
+  	return _arguments.find(flag) != _arguments.end();
   }
 
   std::string GetNonFlag(const size_t index) const {
@@ -98,11 +131,11 @@ class Args {
   	output << _preamble << _usage << _epilouge;
   }
 
-  void SetUsagePreamble(const std::string& preamble) {
+  void SetPreamble(const std::string& preamble) {
   	_preamble = preamble;
   }
 
-  void SetUsageEpilouge(const std::string& epilouge) {
+  void SetEpilouge(const std::string& epilouge) {
   	_epilouge = epilouge;
   }
 
@@ -121,6 +154,7 @@ class Args {
   int _nonflags_required = 0;
 
   void Validate() {
+  	std::vector<std::pair<std::string, std::string>> to_add;
   	for (size_t i = 0; i < _required.size(); ++i) {
   		const std::string flag = _required[i].flag;
   		auto iter = _arguments.find(flag);
@@ -136,7 +170,7 @@ class Args {
   			}
 
   			// Add mapping for flag to alia's result
-  			_arguments[flag] = _arguments[alias];
+  			to_add.push_back(std::make_pair(flag, _arguments[alias]));
   		} else if (!_required[i].alias.empty()) {
 	  		const std::string alias = _required[i].alias;
   			auto alias_iter = _arguments.find(alias);
@@ -146,7 +180,7 @@ class Args {
   			}
 
   			// Add a mapping for alias to flag's result
-  			_arguments[alias] = iter->second;
+  			to_add.push_back(std::make_pair(alias, iter->second));
   		}
   	}
 
@@ -154,9 +188,12 @@ class Args {
   		throw std::runtime_error("Must specify at least " +
   			std::to_string(_nonflags_required) + " non-flags");
   	}
+
+  	for (auto& iter : to_add)
+  		_arguments[iter.first] = iter.second;
   }
 
-  std::string FormatDescription(const std::string& description) {
+  std::string FormatDescription(const std::string& description) const {
   	if (description.size() <= 50) return description;
   	std::stringstream stream;
   	stream.width(50);
@@ -170,35 +207,31 @@ class Args {
   	return stream.str();
   }
 
+  std::string GenerateArgumentUsage(const std::vector<Argument>& arguments) const {
+  	std::stringstream output;
+  	for (size_t i = 0; i < arguments.size(); ++i) {
+  		std::stringstream flag_ids;
+  		flag_ids << "    " << arguments[i].flag;
+  		if (!arguments[i].flag.empty() && !arguments[i].alias.empty())
+  			flag_ids << "/";
+  		flag_ids << arguments[i].alias;
+
+  		output << std::left << std::setw(30) << flag_ids.str();
+  		output << std::left << this->FormatDescription(arguments[i].description);
+  		output << '\n';
+  	}
+  	return output.str();
+  }
+
   void GenerateUsage() {
   	std::stringstream output;
   	if (_required.size() > 0)
   		output << "  Required flags:\n";
-
-  	for (size_t i = 0; i < _required.size(); ++i) {
-  		std::stringstream flag_ids;
-  		flag_ids << "    " << _required[i].flag;
-  		if (!_required[i].flag.empty() && !_required[i].alias.empty())
-  			flag_ids << "/";
-  		flag_ids << _required[i].alias;
-
-  		output << std::left << std::setw(30) << flag_ids.str();
-  		output << std::left << this->FormatDescription(_required[i].description);
-  		output << '\n';
-  	}
+  	output << this->GenerateArgumentUsage(_required);
 
   	if (_optional.size() > 0)
-  		output << "  Optional flags:\n";
-  	for (size_t i = 0; i < _optional.size(); ++i) {
-  		std::stringstream flag_ids;
-  		flag_ids << "    " << _optional[i].flag;
-  		if (!_optional[i].flag.empty() && !_optional[i].alias.empty())
-  			flag_ids << "/";
-  		flag_ids << _optional[i].alias;
-
-  		output << std::setw(36) << flag_ids.str();
-  		output << std::setw(40) << std::left << _optional[i].description;
-  	}
+  		output << "\n  Optional flags:\n";
+  	output << this->GenerateArgumentUsage(_optional);
 
   	if (_nonflags_required > 0) {
   		output << "  " << _nonflags_required << " non-flags are required"
@@ -219,10 +252,10 @@ class Args {
   Args::Default().AddOptionalFlag(flag, alias, description)
 
 #define SARG_SET_USAGE_PREAMBLE(preamble) \
-  Args::Default().SetUsagePreamble(preamble)
+  Args::Default().SetPreamble(preamble)
 
 #define SARG_SET_USAGE_EPILOGUE(epilouge) \
-  Args::Default().SetUsageEpilouge(epilouge)
+  Args::Default().SetEpilouge(epilouge)
 
 #define SARG_SET_USAGE(usage) \
   Args::Default().SetUsage(usage)
