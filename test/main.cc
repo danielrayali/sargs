@@ -1,13 +1,20 @@
 #include "sarg.h"
-#include "flag_parser.h"
 #include <cassert>
 
 using namespace sarg;
 using namespace std;
 
 void TestFlagParser() {
+  std::string str1 = "program";
+  std::string str2 = "-a";
+  std::string str3 = "--bee=12";
+  std::string str4 = "--";
+  std::string str5 = "nonflag1";
+  std::string str6 = "nonflag2";
+
   FlagParser parser;
-  char* argv[6] = { "program", "-a", "--bee=12", "--", "nonflag1", "nonflag2" };
+  char* argv[6] = { &str1.front(), &str2.front(), &str3.front(), &str4.front(),
+                    &str5.front(), &str6.front() };
   parser.Parse(6, argv);
   assert(parser.Has("-a"));
   assert(parser.Has("--bee"));
@@ -20,7 +27,12 @@ void TestFlagParser() {
 }
 
 void TestSarg1() {
-  char* argv[4] = { "program", "-c=12", "--goof", "--super=mfile.dat"};
+  std::string str1 = "program";
+  std::string str2 = "-c=12";
+  std::string str3 = "--goof";
+  std::string str4 = "--super=mfile.dat";
+
+  char* argv[4] = { &str1.front(), &str2.front(), &str3.front(), &str4.front() };
   Args args;
   args.AddRequiredFlag("-c", "", "The dash c flag");
   args.AddRequiredFlag("--goof", "", "The goof flag");
@@ -37,7 +49,12 @@ void TestSarg1() {
 }
 
 void TestAlias() {
-  char* argv[4] = { "program", "-c=12", "--goof", "--super=mfile.dat"};
+  std::string str1 = "program";
+  std::string str2 = "-c=12";
+  std::string str3 = "--goof";
+  std::string str4 = "--super=mfile.dat";
+
+  char* argv[4] = { &str1.front(), &str2.front(), &str3.front(), &str4.front() };
   Args args;
   args.AddRequiredFlag("-c", "--thecflag", "The dash c flag");
   args.AddRequiredFlag("--goof", "", "The goof flag");
@@ -50,7 +67,14 @@ void TestAlias() {
 }
 
 void TestOptional() {
-  char* argv[5] = { "program", "-c=12", "--goof", "--", "file1" };
+  std::string str1 = "program";
+  std::string str2 = "-c=12";
+  std::string str3 = "--goof";
+  std::string str4 = "--";
+  std::string str5 = "file1";
+
+  char* argv[5] = { &str1.front(), &str2.front(), &str3.front(), &str4.front(), &str5.front() };
+
   Args args;
   args.AddRequiredFlag("-c", "--thecflag", "The dash c flag");
   args.AddRequiredFlag("--goof", "", "The goof flag");
@@ -65,7 +89,6 @@ void TestOptional() {
   std::string value = "Dont change me";
   assert(args.GetAsString("--super", value) == false);
   assert(value == "Dont change me");
-  args.SetPreamble("Usage: program [-c=<value>|--goof] -- <file>\n\n");
   args.SetEpilouge("\nSupport: webmaster@awesomesite.com\n\n");
   args.PrintUsage(cout);
 }
