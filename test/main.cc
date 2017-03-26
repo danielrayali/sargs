@@ -1,7 +1,7 @@
-#include "sarg.h"
+#include "sargs.h"
 #include <cassert>
 
-using namespace sarg;
+using namespace sargs;
 using namespace std;
 
 void TestFlagParser() {

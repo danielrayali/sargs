@@ -1,6 +1,6 @@
 # Simple Args
 
-Simple Args (sarg) is a header-only C++ arguments parser. I wrote this so I would never have to integrate with a complicated thirdparty argument parser or write my own again. This parser is simple and has its pros and cons when compared to other libraries like gflags or Poco's argument parsing. It provides the bare minumum of features to keep it simple and integrate quickly into a new or existing project.
+Simple Args (sargs) is a header-only C++ arguments parser. I wrote this so I would never have to integrate with a complicated thirdparty argument parser or write my own again. This parser is simple and has its pros and cons when compared to other libraries like gflags or Poco's argument parsing. It provides the bare minumum of features to keep it simple and integrate quickly into a new or existing project.
 
 ## Quick Start Guide
 
@@ -11,12 +11,12 @@ Sarg is header only, so just make sure it is available through your include dire
 // main.cc
 //
 
-#include <sarg.h>
+#include <sargs.h>
 
 int main(int argc, char* argv[]) {
-  SARG_REQUIRED_FLAG_VALUE("--foo", "-f", "The description of foo");
-  SARG_OPTIONAL_FLAG("--bar", "", "The bar flag to help");
-  SARG_INITIALIZE(argc, argv);
+  SARGS_REQUIRED_FLAG_VALUE("--foo", "-f", "The description of foo");
+  SARGS_OPTIONAL_FLAG("--bar", "", "The bar flag to help");
+  SARGS_INITIALIZE(argc, argv);
 
   //
   // Run program code
@@ -32,14 +32,14 @@ int main(int argc, char* argv[]) {
 //
 
 Worker::Worker() {
-  std::string foo = SARG_GET_STRING("--foo");
-  bool bar = SARG_HAS("--bar");
+  std::string foo = SARGS_GET_STRING("--foo");
+  bool bar = SARGS_HAS("--bar");
 }
 ```
 
 ## Installation
 
-Just include sarg.h in your include directories and you're good to go.
+Just include sargs.h in your include directories and you're good to go.
 
 ## Argument Format
 
@@ -63,7 +63,7 @@ has one flag (```--flag1```) with the associated value (```value1```) and one no
 
 ### Required Arguments
 
-If you have flags that must be specified to run correctly you can specify them with ```SARG_REQUIRED_FLAG```. If there needs to be a value associated with the flag use ```SARG_REQUIRED_FLAG_VALUE```. If this value is not specified usage information will be displayed by default. If you would like ```SARG_INITIALIZE()``` to throw a ```std::runtime_error``` instead, use ```SARG_THROW_ON_VALIDATION()```.
+If you have flags that must be specified to run correctly you can specify them with ```SARGS_REQUIRED_FLAG```. If there needs to be a value associated with the flag use ```SARGS_REQUIRED_FLAG_VALUE```. If this value is not specified usage information will be displayed by default. If you would like ```SARGS_INITIALIZE()``` to throw a ```std::runtime_error``` instead, use ```SARGS_THROW_ON_VALIDATION()```.
 
 ### Default Usage and Preamble
 
@@ -84,29 +84,29 @@ Usage: ./program <--bar|--help|-h> --foo=value
 
 There are a few things that are default behaviour. Below is a list of these default behaviors and the corresponding macro to change or disable it.
 
-- Replace default flag description string: ```SARG_SET_USAGE()```
-- Replace default preamble: ```SARG_SET_PREAMBLE()```
-- Set an epilogue: ```SARG_SET_EPILOGUE()```
-- Throw during validation instead of printing usage and exiting: ```SARG_VALIDATION_THROWS()```
-- Disable predefined ```--help```/```-h``` flags and behavior: ```SARG_DISABLE_HELP()```.
+- Replace default flag description string: ```SARGS_SET_USAGE()```
+- Replace default preamble: ```SARGS_SET_PREAMBLE()```
+- Set an epilogue: ```SARGS_SET_EPILOGUE()```
+- Throw during validation instead of printing usage and exiting: ```SARGS_VALIDATION_THROWS()```
+- Disable predefined ```--help```/```-h``` flags and behavior: ```SARGS_DISABLE_HELP()```.
 
 ### Basic Value Conversions
 
-Internally each argument value is kept as a string. These can be converted to a limited number of other types for you with proper error handling. If it can not be converted (e.g. Trying to get "abc" as a float) a ```std::runtime_error``` will be thrown. If no value is specified, ```SARG_INITIALIZE()``` will print usage and exit or throw. These macros will return the value. For optional values, use ```SARG_HAS()``` before converting the value.
+Internally each argument value is kept as a string. These can be converted to a limited number of other types for you with proper error handling. If it can not be converted (e.g. Trying to get "abc" as a float) a ```std::runtime_error``` will be thrown. If no value is specified, ```SARGS_INITIALIZE()``` will print usage and exit or throw. These macros will return the value. For optional values, use ```SARGS_HAS()``` before converting the value.
 
 ```
-SARG_GET_INT64(flag)
-SARG_GET_STRING(flag)
-SARG_GET_FLOAT(flag)
+SARGS_GET_INT64(flag)
+SARGS_GET_STRING(flag)
+SARGS_GET_FLOAT(flag)
 ```
 
 ### Non-Zero Non-Flags Can Be Required
 
-Use ```SARG_REQUIRE_NONFLAGS()``` to ensure the user is required to set a specific number of non-flags. These can be iterated over the vector of strings returned by ```SARG_GET_NONFLAGS()```.
+Use ```SARGS_REQUIRE_NONFLAGS()``` to ensure the user is required to set a specific number of non-flags. These can be iterated over the vector of strings returned by ```SARGS_GET_NONFLAGS()```.
 
 ### Header Only
 
-Just include sarg.h and you're good to go.
+Just include sargs.h and you're good to go.
 
 ### Avilable Everywhere
 
@@ -121,62 +121,62 @@ Please open github issues for this software or create a pull request if there is
 ```
 // Initializes and validates the configuration for the arguments provided
 // No return value. Can throw.
-SARG_INITIALIZE(argc, argv)
+SARGS_INITIALIZE(argc, argv)
 
 // Tell Sarg that a flag is required and requires no value to be specified
 // Both flag and alias will be available for lookup once Sargs is initialized
 // even if the user only specified one. description is used just for usage
 // information. If a value is specified it is stored but ignored.
-SARG_REQUIRED_FLAG(flag, alias, description)
+SARGS_REQUIRED_FLAG(flag, alias, description)
 
-// Tell sarg that a flag is required and does require a value. Same behaviour as
-// SARG_REQUIRED_FLAG
-SARG_REQUIRED_FLAG_VALUE(flag, alias, description)
+// Tell sargs that a flag is required and does require a value. Same behaviour as
+// SARGS_REQUIRED_FLAG
+SARGS_REQUIRED_FLAG_VALUE(flag, alias, description)
 
-// Tell sarg that there might be an optional flag that may not have value.
-SARG_OPTIONAL_FLAG(flag, alias, description)
+// Tell sargs that there might be an optional flag that may not have value.
+SARGS_OPTIONAL_FLAG(flag, alias, description)
 
-// Tell sarg that there might be an optional flag but it must have a value
-SARG_OPTIONAL_FLAG_VALUE(flag, alias, description)
+// Tell sargs that there might be an optional flag but it must have a value
+SARGS_OPTIONAL_FLAG_VALUE(flag, alias, description)
 
 // Replace the default preamble with a custom one
-SARG_SET_PREAMBLE(preamble)
+SARGS_SET_PREAMBLE(preamble)
 
 // Set the epilogue
-SARG_SET_EPILOGUE(epilogue)
+SARGS_SET_EPILOGUE(epilogue)
 
 // Replace the default flag description string with a custom one
-SARG_SET_FLAG_DESCRIPTION(flag_description)
+SARGS_SET_FLAG_DESCRIPTION(flag_description)
 
 // Print the usage to the specified stream
-SARG_PRINT_USAGE(ostream)
+SARGS_PRINT_USAGE(ostream)
 
 // Print the usage to std::cout
-SARG_PRINT_USAGE_TO_COUT()
+SARGS_PRINT_USAGE_TO_COUT()
 
 // Require that at least count non-flags are specified by the user
-SARG_REQUIRE_NONFLAGS(count)
+SARGS_REQUIRE_NONFLAGS(count)
 
 // Get a non-flag based on the index it was specified by the user
-SARG_GET_NONFLAG(index)
+SARGS_GET_NONFLAG(index)
 
 // Get the value of a flag as an int64_t
-SARG_GET_INT64(flag)
+SARGS_GET_INT64(flag)
 
 // Get the value of a flag as a std::string
-SARG_GET_STRING(flag)
+SARGS_GET_STRING(flag)
 
 // Get the value of a flag as a float
-SARG_GET_FLOAT(flag)
+SARGS_GET_FLOAT(flag)
 
 // Return a bool of the flag was specified
-SARG_HAS(flag)
+SARGS_HAS(flag)
 
 // Disable default -h and --help flags. These will do nothing if specified by
-// the user when this is called before SARG_INITIALIZE()
-SARG_DISABLE_HELP()
+// the user when this is called before SARGS_INITIALIZE()
+SARGS_DISABLE_HELP()
 
 // Allow the argument validation to throw std::runtime_errors on the problems
 // it finds. Description strings will be provided in the exceptions thrown.
-SARG_VALIDATION_THROWS()
+SARGS_VALIDATION_THROWS()
 ```

@@ -22,7 +22,7 @@
 #include <string>
 #include <vector>
 
-namespace sarg {
+namespace sargs {
 
 class FlagParser {
  public:
@@ -506,81 +506,81 @@ class Args {
 
 // Initializes and validates the configuration for the arguments provided
 // No return value. Can throw.
-#define SARG_INITIALIZE(argc, argv) \
-	sarg::Args::Default().Initialize(argc, argv)
+#define SARGS_INITIALIZE(argc, argv) \
+	sargs::Args::Default().Initialize(argc, argv)
 
 // Tell Sarg that a flag is required and requires no value to be specified
 // Both flag and alias will be available for lookup once Sargs is initialized
 // even if the user only specified one. description is used just for usage
 // information. If a value is specified it is stored but ignored.
-#define SARG_REQUIRED_FLAG(flag, alias, description) \
-	sarg::Args::Default().AddRequiredFlag(flag, alias, description)
+#define SARGS_REQUIRED_FLAG(flag, alias, description) \
+	sargs::Args::Default().AddRequiredFlag(flag, alias, description)
 
-// Tell sarg that a flag is required and does require a value. Same behaviour as
-// SARG_REQUIRED_FLAG
-#define SARG_REQUIRED_FLAG_VALUE(flag, alias, description) \
-	sarg::Args::Default().AddRequiredFlag(flag, alias, description, true)
+// Tell sargs that a flag is required and does require a value. Same behaviour as
+// SARGS_REQUIRED_FLAG
+#define SARGS_REQUIRED_FLAG_VALUE(flag, alias, description) \
+	sargs::Args::Default().AddRequiredFlag(flag, alias, description, true)
 
-// Tell sarg that there might be an optional flag that may not have value.
-#define SARG_OPTIONAL_FLAG(flag, alias, description) \
-	sarg::Args::Default().AddOptionalFlag(flag, alias, description)
+// Tell sargs that there might be an optional flag that may not have value.
+#define SARGS_OPTIONAL_FLAG(flag, alias, description) \
+	sargs::Args::Default().AddOptionalFlag(flag, alias, description)
 
-// Tell sarg that there might be an optional flag but it must have a value
-#define SARG_OPTIONAL_FLAG_VALUE(flag, alias, description) \
-	sarg::Args::Default().AddOptionalFlag(flag, alias, description, true)
+// Tell sargs that there might be an optional flag but it must have a value
+#define SARGS_OPTIONAL_FLAG_VALUE(flag, alias, description) \
+	sargs::Args::Default().AddOptionalFlag(flag, alias, description, true)
 
 // Replace the default preamble with a custom one
-#define SARG_SET_PREAMBLE(preamble) \
-	sarg::Args::Default().SetPreamble(preamble)
+#define SARGS_SET_PREAMBLE(preamble) \
+	sargs::Args::Default().SetPreamble(preamble)
 
 // Set the epilogue
-#define SARG_SET_EPILOGUE(epilogue) \
-	sarg::Args::Default().SetEpilogue(epilogue)
+#define SARGS_SET_EPILOGUE(epilogue) \
+	sargs::Args::Default().SetEpilogue(epilogue)
 
 // Replace the default flag description string with a custom one
-#define SARG_SET_FLAG_DESCRIPTION(flag_description) \
-	sarg::Args::Default().SetFlagDescription(flag_description)
+#define SARGS_SET_FLAG_DESCRIPTION(flag_description) \
+	sargs::Args::Default().SetFlagDescription(flag_description)
 
 // Print the usage to the specified stream
-#define SARG_PRINT_USAGE(ostream) \
-	sarg::Args::Default().PrintUsage(ostream)
+#define SARGS_PRINT_USAGE(ostream) \
+	sargs::Args::Default().PrintUsage(ostream)
 
 // Print the usage to std::cout
-#define SARG_PRINT_USAGE_TO_COUT() \
-	sarg::Args::Default().PrintUsage(std::cout)
+#define SARGS_PRINT_USAGE_TO_COUT() \
+	sargs::Args::Default().PrintUsage(std::cout)
 
 // Require that at least count non-flags are specified by the user
-#define SARG_REQUIRE_NONFLAGS(count) \
-	sarg::Args::Default().RequireNonFlags(count)
+#define SARGS_REQUIRE_NONFLAGS(count) \
+	sargs::Args::Default().RequireNonFlags(count)
 
 // Get a non-flag based on the index it was specified by the user
-#define SARG_GET_NONFLAG(index) \
-	sarg::Args::Default().GetNonFlag(index)
+#define SARGS_GET_NONFLAG(index) \
+	sargs::Args::Default().GetNonFlag(index)
 
 // Get the value of a flag as an int64_t
-#define SARG_GET_INT64(flag) \
-	sarg::Args::Default().GetAsInt64(flag)
+#define SARGS_GET_INT64(flag) \
+	sargs::Args::Default().GetAsInt64(flag)
 
 // Get the value of a flag as a std::string
-#define SARG_GET_STRING(flag) \
-	sarg::Args::Default().GetAsString(flag)
+#define SARGS_GET_STRING(flag) \
+	sargs::Args::Default().GetAsString(flag)
 
 // Get the value of a flag as a float
-#define SARG_GET_FLOAT(flag) \
-	sarg::Args::Default().GetAsFloat(flag)
+#define SARGS_GET_FLOAT(flag) \
+	sargs::Args::Default().GetAsFloat(flag)
 
 // Return a bool of the flag was specified
-#define SARG_HAS(flag) \
-	sarg::Args::Default().Has(flag)
+#define SARGS_HAS(flag) \
+	sargs::Args::Default().Has(flag)
 
 // Disable default -h and --help flags. These will do nothing if specified by
-// the user when this is called before SARG_INITIALIZE()
-#define SARG_DISABLE_HELP() \
-	sarg::Args::Default().DisableHelp()
+// the user when this is called before SARGS_INITIALIZE()
+#define SARGS_DISABLE_HELP() \
+	sargs::Args::Default().DisableHelp()
 
 // Allow the argument validation to throw std::runtime_errors on the problems
 // it finds. Description strings will be provided in the exceptions thrown.
-#define SARG_VALIDATION_THROWS() \
-	sarg::Args::Default().ThrowOnValidation()
+#define SARGS_VALIDATION_THROWS() \
+	sargs::Args::Default().ThrowOnValidation()
 
-}  // namespace sarg
+}  // namespace sargs
