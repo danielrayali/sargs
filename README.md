@@ -37,6 +37,8 @@ Worker::Worker() {
 }
 ```
 
+For more details on the full API, check the github [Wiki page](https://github.com/drali/sargs/wiki/API-Documentation).
+
 ## Installation
 
 Just include sargs.h in your include directories and you're good to go.
