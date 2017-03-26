@@ -89,7 +89,7 @@ void TestOptional() {
   std::string value = "Dont change me";
   assert(args.GetAsString("--super", value) == false);
   assert(value == "Dont change me");
-  args.SetEpilouge("\nSupport: webmaster@awesomesite.com\n\n");
+  args.SetEpilogue("\nSupport: webmaster@awesomesite.com\n\n");
   args.PrintUsage(cout);
 }
 
