@@ -4,7 +4,7 @@ Simple Args (sargs) is a header-only C++ arguments parser. I wrote this so I wou
 
 ## Quick Start Guide
 
-Sarg is header only, so just make sure it is available through your include directories. You need to put some code in your main function, or somwhere near there with access to the initial argument variables. These variables are not modified.
+sargs is header only, so just make sure it is available through your include directories. You need to put some code in your main function, or somwhere near there with access to the initial argument variables. These variables are not modified.
 
 ```cpp
 //
@@ -110,7 +110,7 @@ Just include sargs.h and you're good to go.
 
 ### Avilable Everywhere
 
-Once Sarg has been initialized, the variables can be accessed through the static global singleton using the provided macros.
+Once sargs has been initialized, the variables can be accessed through the static global singleton using the provided macros.
 
 ## Bugs/Comments
 
@@ -123,7 +123,7 @@ Please open github issues for this software or create a pull request if there is
 // No return value. Can throw.
 SARGS_INITIALIZE(argc, argv)
 
-// Tell Sarg that a flag is required and requires no value to be specified
+// Tell sargs that a flag is required and requires no value to be specified
 // Both flag and alias will be available for lookup once Sargs is initialized
 // even if the user only specified one. description is used just for usage
 // information. If a value is specified it is stored but ignored.

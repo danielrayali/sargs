@@ -509,15 +509,15 @@ class Args {
 #define SARGS_INITIALIZE(argc, argv) \
 	sargs::Args::Default().Initialize(argc, argv)
 
-// Tell Sarg that a flag is required and requires no value to be specified
+// Tell Sargs that a flag is required and requires no value to be specified
 // Both flag and alias will be available for lookup once Sargs is initialized
 // even if the user only specified one. description is used just for usage
 // information. If a value is specified it is stored but ignored.
 #define SARGS_REQUIRED_FLAG(flag, alias, description) \
 	sargs::Args::Default().AddRequiredFlag(flag, alias, description)
 
-// Tell sargs that a flag is required and does require a value. Same behaviour as
-// SARGS_REQUIRED_FLAG
+// Tell sargs that a flag is required and does require a value. Same behavior
+// as SARGS_REQUIRED_FLAG
 #define SARGS_REQUIRED_FLAG_VALUE(flag, alias, description) \
 	sargs::Args::Default().AddRequiredFlag(flag, alias, description, true)
 
