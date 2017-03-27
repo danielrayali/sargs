@@ -67,7 +67,7 @@ has one flag (```--flag1```) with the associated value (```value1```) and one no
 
 If you have flags that must be specified to run correctly you can specify them with ```SARGS_REQUIRED_FLAG```. If there needs to be a value associated with the flag use ```SARGS_REQUIRED_FLAG_VALUE```. If this value is not specified usage information will be displayed by default. If you would like ```SARGS_INITIALIZE()``` to throw a ```std::runtime_error``` instead, use ```SARGS_THROW_ON_VALIDATION()```.
 
-### Default Usage and Preamble
+### Default Flag Description and Preamble
 
 A default preamble and flag description will be generated for you. The preamble is printed before the flag descriptions and the epilogue is printed after the flag descriptions. By default there is no epilogue. The default preamble is a basic usage format. Below is the preamble and flag description from the Quick Start section.
 
@@ -105,6 +105,10 @@ SARGS_GET_FLOAT(flag)
 ### Non-Zero Non-Flags Can Be Required
 
 Use ```SARGS_REQUIRE_NONFLAGS()``` to ensure the user is required to set a specific number of non-flags. These can be iterated over the vector of strings returned by ```SARGS_GET_NONFLAGS()```.
+
+### Argument Specification Not Required
+
+If you want to get started fast and don't care about Usage, you can just initialize sargs and start accessing flags as needed, where they are needed. Optional arguments exist only to provide context to the Usage information.
 
 ### Header Only
 
