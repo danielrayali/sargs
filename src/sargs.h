@@ -13,6 +13,8 @@
 #pragma once
 
 #include <cerrno>
+#include <cstdint>
+#include <cctype>
 #include <iomanip>
 #include <iostream>
 #include <list>
@@ -78,7 +80,7 @@ class FlagParser {
 
   std::vector<std::string> GetNonFlags() const {
     std::vector<std::string> nonflags;
-    for (int i = 0; i < _nonflags.size(); ++i)
+    for (size_t i = 0; i < _nonflags.size(); ++i)
       nonflags.push_back(std::string(_nonflags[i]));
     return nonflags;
   }
@@ -298,7 +300,7 @@ class Args {
   std::string _flag_description;
   std::string _epilogue;
   std::string _preamble;
-  int _nonflags_required = 0;
+  size_t _nonflags_required = 0;
   bool _help_enabled = true;
   bool _throw_on_validation = false;
 
