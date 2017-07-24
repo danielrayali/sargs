@@ -447,7 +447,7 @@ class Args {
   void GenerateFlagUsage() {
     std::stringstream output;
     if (_required.size() > 0)
-      output << "  Required flags:\n";
+      output << "\n  Required flags:\n";
     output << this->GenerateArgumentUsage(_required);
 
     if (_optional.size() > 0)
@@ -501,7 +501,7 @@ class Args {
       }
     }
 
-    output << "\n\n";
+    output << "\n";
     _preamble = output.str();
   }
 };
