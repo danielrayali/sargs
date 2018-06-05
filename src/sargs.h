@@ -466,25 +466,22 @@ class Args {
     std::stringstream output;
     output << "Usage: " << _parser.GetBinary() << ' ';
     if (_optional.size() > 0) {
-      output << "<";
       for (size_t i = 0; i < _optional.size(); ++i) {
+        output << "<" << _optional[i].flag;
         if (!_optional[i].flag.empty()) {
-          if (i != 0)
-            output << "|";
-          output << _optional[i].flag;
           if (_optional[i].value)
             output << "=value";
+          if (!_optional[i].flag.empty())
+            output << "|";
         }
 
         if (!_optional[i].alias.empty()) {
-          if (i != 0)
-            output << "|";
           output << _optional[i].alias;
           if (_optional[i].value)
             output << "=value";
         }
+        output << "> ";
       }
-      output << "> ";
     }
 
     for (size_t i = 0; i < _required.size(); ++i) {

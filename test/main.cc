@@ -93,11 +93,31 @@ void TestOptional() {
   args.PrintUsage(cout);
 }
 
+void TestHelp() {
+  std::string str1 = "program";
+  std::string str2 = "-c=12";
+  std::string str3 = "--goof";
+  std::string str4 = "--";
+  std::string str5 = "file1";
+
+  char* argv[5] = { &str1.front(), &str2.front(), &str3.front(), &str4.front(), &str5.front() };
+
+
+    Args args;
+    args.AddOptionalFlag("--display", "-d", "Displays");
+    args.AddOptionalFlag("--convert", "-c", "Converts");
+    args.RequireNonFlags(1);
+    args.Initialize(5, argv);
+
+    args.PrintUsage(cout);
+}
+
 int main(int argc, char* argv[]) {
   TestFlagParser();
   TestSarg1();
   TestAlias();
   TestOptional();
+  TestHelp();
   return 0;
 }
 
