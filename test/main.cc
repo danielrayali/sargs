@@ -42,9 +42,9 @@ void TestSarg1() {
 
   try { args.Initialize(4, argv); }
   catch (SargsUsage& ex) {
-    printf("Sargs usage\n");
+    printf("Sargs usage TestSarg1\n");
   } catch (SargsError& er) {
-    printf("Sargs error\n");
+    printf("Sargs error TestSarg1\n");
   }
 
   std::string c_str = args.GetAsString("-c");

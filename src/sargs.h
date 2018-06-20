@@ -128,7 +128,7 @@ class FlagParser {
 
     auto iter = _arguments.find(flag);
     if (iter == _arguments.end())
-      throw SargsError(flag + " required but not specified");
+      return {};
 
     return std::string(iter->second);
   }
@@ -181,9 +181,17 @@ struct Argument {
            const bool _value = false) :
     flag(_flag), alias(_alias), description(_description), value(_value) {}
 
+  Argument(const std::string& _flag,
+           const std::string& _alias,
+           const std::string& _description,
+           const std::string& _fallback,
+           const bool _value = false) :
+    flag(_flag), alias(_alias), description(_description), fallback(_fallback), value(_value) {}
+
   std::string flag;
   std::string alias;
   std::string description;
+  std::string fallback;
   bool value = false;
 };
 
@@ -204,7 +212,8 @@ class Args {
 
     this->GenerateFlagUsage();
     _parser.Parse(argc, argv);
-    _arguments = _parser.GetFlags();
+    for (auto iter : _parser.GetFlags())
+      _arguments[iter.first] = iter.second;
     this->GenerateUsage();
 
     const bool help_specified = _parser.Has("--help") || _parser.Has("-h");
@@ -311,6 +320,18 @@ class Args {
     this->AddExpectedFlagToParser(alias, value);
   }
 
+  void AddOptionalFlag(const std::string& flag, const std::string& alias,
+                       const std::string& description, const std::string& fallback,
+                       bool value = false) {
+    _optional.emplace_back(flag, alias, description, fallback, value);
+    if (!flag.empty())
+      _arguments[flag] = fallback;
+    if (!alias.empty())
+      _arguments[alias] = fallback;
+    this->AddExpectedFlagToParser(flag, value);
+    this->AddExpectedFlagToParser(alias, value);
+  }
+
   void RequireNonFlags(const int count) {
     _nonflags_required = count;
   }
@@ -361,76 +382,93 @@ class Args {
       _parser.AddExpectedFlag(flag);
   }
 
+  void AddArgument(Argument& iter) {
+      if (!_parser.Has(iter.flag) && !_parser.Has(iter.alias))
+        throw SargsUsage("Must specify " + iter.flag + " or " + iter.alias);
+      std::string value;
+      if (iter.value) {
+        std::string flag_value = _parser.GetValue(iter.flag);
+        std::string alias_value = _parser.GetValue(iter.alias);
+        if (flag_value.empty() && alias_value.empty())
+          throw SargsUsage("Must specify a value for " + iter.flag + " or " + iter.alias);
+        value = flag_value.empty() ? alias_value : flag_value;
+      }
+      _arguments[iter.flag] = value;
+      _arguments[iter.alias] = value;
+  }
+
   void Validate() {
-    std::vector<std::pair<std::string, std::string>> to_add;
-    for (size_t i = 0; i < _required.size(); ++i) {
-      const std::string flag = _required[i].flag;
-      auto iter = _arguments.find(flag);
-      if (iter == _arguments.end()) {
-        std::string alias = _required[i].alias;
-        if (alias.empty())
-          throw SargsError(flag + " required, but not specified");
+    for (auto& iter : _required)
+      this->AddArgument(iter);
 
-        iter = _arguments.find(alias);
-        if (iter == _arguments.end()) {
-          throw SargsError(flag + " or " + alias +
-                                   " required, but not specified");
-        }
+    for (auto iter : _optional)
+      this->AddArgument(iter);
 
-        if (_required[i].value && iter->second.empty())
-          throw SargsError("No value specified for " + alias);
+    // std::vector<std::pair<std::string, std::string>> to_add;
+    // for (size_t i = 0; i < _required.size(); ++i) {
+    //   const std::string flag = _required[i].flag;
+    //   auto iter = _arguments.find(flag);
+    //   if (iter == _arguments.end()) {
+    //     std::string alias = _required[i].alias;
+    //     if (alias.empty())
+    //       throw SargsError(flag + " required, but not specified");
 
-        // Add mapping for flag to alia's result
-        to_add.push_back(std::make_pair(flag, _arguments[alias]));
-      } else if (!_required[i].alias.empty()) {
-        const std::string alias = _required[i].alias;
-        auto alias_iter = _arguments.find(alias);
-        if (alias_iter != _arguments.end()) {
-          throw SargsError("Cannot specify " + flag + " and " + alias +
-                                   ", they mean the same thing");
-        }
+    //     iter = _arguments.find(alias);
+    //     if (iter == _arguments.end())
+    //       throw SargsError(flag + " or " + alias + " required, but not specified");
 
-        if (_required[i].value && iter->second.empty())
-          throw SargsError("No value specified for " + flag);
+    //     if (_required[i].value && iter->second.empty())
+    //       throw SargsError("No value specified for " + alias);
 
-        // Add a mapping for alias to flag's result
-        to_add.push_back(std::make_pair(alias, iter->second));
-      }
-    }
+    //     // Add mapping for flag to alias's result
+    //     to_add.push_back(std::make_pair(flag, _arguments[alias]));
+    //   } else if (!_required[i].alias.empty()) {
+    //     const std::string alias = _required[i].alias;
+    //     auto alias_iter = _arguments.find(alias);
+    //     if (alias_iter != _arguments.end())
+    //       throw SargsError("Cannot specify " + flag + " and " + alias + ", they mean the same thing");
 
-    for (size_t i = 0; i < _optional.size(); ++i) {
-      const std::string flag = _optional[i].flag;
-      auto iter = _arguments.find(flag);
-      if (iter == _arguments.end()) {
-        std::string alias = _optional[i].alias;
-        if (alias.empty())
-          continue;
+    //     if (_required[i].value && iter->second.empty())
+    //       throw SargsError("No value specified for " + flag);
 
-        iter = _arguments.find(alias);
-        if (iter == _arguments.end()) {
-          continue;
-        }
+    //     // Add a mapping for alias to flag's result
+    //     to_add.push_back(std::make_pair(alias, iter->second));
+    //   }
+    // }
 
-        if (_optional[i].value && iter->second.empty())
-          throw SargsError("No value specified for " + alias);
+    // for (size_t i = 0; i < _optional.size(); ++i) {
+    //   const std::string flag = _optional[i].flag;
+    //   auto iter = _arguments.find(flag);
+    //   if (iter == _arguments.end()) {
+    //     std::string alias = _optional[i].alias;
+    //     if (alias.empty())
+    //       continue;
 
-        // Add mapping for flag to alia's result
-        to_add.push_back(std::make_pair(flag, iter->second));
-      } else if (!_optional[i].alias.empty()) {
-        const std::string alias = _optional[i].alias;
-        auto alias_iter = _arguments.find(alias);
-        if (alias_iter != _arguments.end()) {
-          throw SargsError("Cannot specify " + flag + " and " + alias +
-                                   ", they mean the same thing");
-        }
+    //     iter = _arguments.find(alias);
+    //     if (iter == _arguments.end()) {
+    //       continue;
+    //     }
 
-        if (_optional[i].value && iter->second.empty())
-          throw SargsError("No value specified for " + flag);
+    //     if (_optional[i].value && iter->second.empty())
+    //       throw SargsError("No value specified for " + alias);
 
-        // Add a mapping for alias to flag's result
-        to_add.push_back(std::make_pair(alias, iter->second));
-      }
-    }
+    //     // Add mapping for flag to alia's result
+    //     to_add.push_back(std::make_pair(flag, iter->second));
+    //   } else if (!_optional[i].alias.empty()) {
+    //     const std::string alias = _optional[i].alias;
+    //     auto alias_iter = _arguments.find(alias);
+    //     if (alias_iter != _arguments.end()) {
+    //       throw SargsError("Cannot specify " + flag + " and " + alias +
+    //                                ", they mean the same thing");
+    //     }
+
+    //     if (_optional[i].value && iter->second.empty())
+    //       throw SargsError("No value specified for " + flag);
+
+    //     // Add a mapping for alias to flag's result
+    //     to_add.push_back(std::make_pair(alias, iter->second));
+    //   }
+    // }
 
     if (_parser.GetNonFlags().size() < _nonflags_required) {
       throw SargsError("Must specify at least " +
@@ -441,8 +479,8 @@ class Args {
       throw SargsError("Unrecognized flags used");
     }
 
-    for (auto& iter : to_add)
-      _arguments[iter.first] = iter.second;
+    // for (auto& iter : to_add)
+    //   _arguments[iter.first] = iter.second;
   }
 
   size_t DetermineNumCharsToWrite(const std::string& description) const {
@@ -588,6 +626,10 @@ class Args {
 // Tell sargs that there might be an optional flag but it must have a value
 #define SARGS_OPTIONAL_FLAG_VALUE(flag, alias, description) \
   sargs::Args::Default().AddOptionalFlag(flag, alias, description, true)
+
+// Tell sargs that there might be an optional flag but it must have a value
+#define SARGS_OPTIONAL_FLAG_VALUE_DEFAULT(flag, alias, description, fallback) \
+  sargs::Args::Default().AddOptionalFlag(flag, alias, description, fallback, true)
 
 // Replace the default preamble with a custom one
 #define SARGS_SET_PREAMBLE(preamble) \
