@@ -248,6 +248,22 @@ class Args {
     _usage_enabled = false;
   }
 
+  std::string GetPreamble() const {
+    return _preamble;
+  }
+
+  std::string GetEpilogue() const {
+    return _epilogue;
+  }
+
+  std::string GetFlagDescription() const {
+    return _flag_description;
+  }
+
+  std::string GetBinary() const {
+    return _binary;
+  }
+
  private:
   std::vector<Argument> _required;
   std::vector<Argument> _optional;
@@ -533,24 +549,31 @@ class Args {
   }
 };
 
+// Parses and verifies the arguments to ensure the flags are recognized and well-formed
 #define SARGS_INITIALIZE(argc, argv) \
   sargs::Args::Default().Initialize(argc, argv)
 
+// Tells Sargs that a flag is required and will have no value
 #define SARGS_REQUIRED_FLAG(flag, alias, description) \
   sargs::Args::Default().AddRequiredFlag(flag, alias, description)
 
+// Tells Sargs that a flag is required and will have a value with no default value
 #define SARGS_REQUIRED_FLAG_VALUE(flag, alias, description) \
   sargs::Args::Default().AddRequiredFlagValue(flag, alias, description, "")
 
+// Tells Sargs that a flag is required and will have a value with a default value
 #define SARGS_REQUIRED_FLAG_VALUE_DEFAULT(flag, alias, description, fallback) \
   sargs::Args::Default().AddRequiredFlagValue(flag, alias, description, fallback)
 
+// Tells Sargs that an optional flag should be expected with no value
 #define SARGS_OPTIONAL_FLAG(flag, alias, description) \
   sargs::Args::Default().AddOptionalFlag(flag, alias, description)
 
+// Tells Sargs that an optional flag should be expected and will have a value with no default value
 #define SARGS_OPTIONAL_FLAG_VALUE(flag, alias, description) \
   sargs::Args::Default().AddOptionalFlagValue(flag, alias, description, "")
 
+// Tells Sargs that an optional flag should be expected, will have a value and a default value
 #define SARGS_OPTIONAL_FLAG_VALUE_DEFAULT(flag, alias, description, fallback) \
   sargs::Args::Default().AddOptionalFlagValue(flag, alias, description, fallback)
 
@@ -565,6 +588,22 @@ class Args {
 // Replace the default flag description string with a custom one
 #define SARGS_SET_FLAG_DESCRIPTION(flag_description) \
   sargs::Args::Default().SetFlagDescription(flag_description)
+
+// Gets the currently set preamble string
+#define SARGS_GET_PREAMBLE() \
+  sargs::Args::Default().GetPreamble()
+
+// Gets the currently set epilogue string
+#define SARGS_GET_EPILOGUE() \
+  sargs::Args::Default().GetEpilogue()
+
+// Gets the currently set flag description string
+#define SARGS_GET_FLAG_DESCRIPTION() \
+  sargs::Args::Default().GetFlagDescription()
+
+// Get the binary string which is passed as argv[0]
+#define SARGS_GET_BINARY() \
+  sargs::Args::Default().Binary()
 
 // Print the usage to the specified stream
 #define SARGS_PRINT_USAGE(ostream) \
@@ -582,6 +621,7 @@ class Args {
 #define SARGS_GET_NONFLAG(index) \
   sargs::Args::Default().GetNonFlag(index)
 
+// Gets all non-flags
 #define SARGS_GET_NONFLAGS() \
   sargs::Args::Default().GetNonFlags()
 
@@ -606,12 +646,15 @@ class Args {
 #define SARGS_DISABLE_HELP() \
   sargs::Args::Default().DisableHelp()
 
+// Disables the call to std::exit if there is a problem during initialization
 #define SARGS_DISABLE_EXIT() \
   sargs::Args::Default().DisableExit()
 
+// Disables all exceptions in Sargs
 #define SARGS_DISABLE_EXCEPTIONS() \
   sargs::Args::Default().DisableExceptions()
 
+// Disables printing usage if an error is encountered during initialization
 #define SARGS_DISABLE_USAGE() \
   sargs::Args::Default().DisableUsage()
 
