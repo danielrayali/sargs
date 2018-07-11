@@ -182,6 +182,10 @@ class Args {
     return _nonflags.at(index);
   }
 
+  std::vector<std::string> GetNonFlags() const {
+    return _nonflags;
+  }
+
   void AddRequiredFlag(const std::string& flag, const std::string& alias, const std::string& description) {
     _required.emplace_back(flag, alias, description, false);
   }
@@ -577,6 +581,9 @@ class Args {
 // Get a non-flag based on the index it was specified by the user
 #define SARGS_GET_NONFLAG(index) \
   sargs::Args::Default().GetNonFlag(index)
+
+#define SARGS_GET_NONFLAGS() \
+  sargs::Args::Default().GetNonFlags()
 
 // Get the value of a flag as an int64_t
 #define SARGS_GET_INT64(flag) \
