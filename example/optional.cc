@@ -11,10 +11,6 @@ int main(int argc, char* argv[]) {
     cerr << "Sargs threw error" << endl;
     return 1;
   }
-  catch (SargsUsage& usage) {
-    cout << "Sargs threw usage" << endl;
-    return 1;
-  }
 
   cout << "Display is " << SARGS_GET_STRING("--display") << endl;
   cout << "Convert is " << SARGS_GET_STRING("--convert") << endl;

@@ -11,3 +11,9 @@ add_executable (example
   hello.h)
 
 target_link_libraries (example)
+
+add_executable (simple simple.cc)
+target_link_libraries (simple)
+
+add_executable (optional optional.cc)
+target_link_libraries (optional)

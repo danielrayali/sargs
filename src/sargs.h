@@ -33,159 +33,18 @@ class SargsError : public std::runtime_error {
   ~SargsError() = default;
 };
 
-class SargsUsage : public std::invalid_argument {
- public:
-  SargsUsage(const std::string& message) : std::invalid_argument(message) {};
-  ~SargsUsage() = default;
-};
-
-class FlagParser {
- public:
-  FlagParser() = default;
-
-  FlagParser(int argc, char* argv[]) { this->Parse(argc, argv); }
-
-  ~FlagParser() = default;
-
-  void Parse(int argc, char* argv[]) {
-    _binary = argv[0];
-    bool delim_encountered = false;
-    for (int i = 1; i < argc; ++i) {
-      // Check for explicit non-flags
-      if (delim_encountered) {
-        _nonflags.push_back(argv[i]);
-        continue;
-      }
-
-      // Check if we encountered the non-flag delimiter
-      if (std::string(argv[i]) == std::string("--")) {
-        delim_encountered = true;
-        continue;
-      }
-
-      // Check for exact matches of a flag the user requested
-      const std::string current(argv[i]);
-      if (this->Contains(_expected_flags, current)) {
-        _arguments[current] = nullptr;
-        continue;
-      }
-
-      // Check if this is a stand alone value flag
-      if (this->Contains(_expected_value_flags, current)) {
-        _arguments[current] = argv[i + 1];
-        i++;
-        continue;
-      }
-
-      // Check for flags that set a value through an equals (e.g. --foo=bar)
-      size_t pos = current.find_first_of('=');
-      std::string current_flag(current.substr(0, pos));
-      const bool has_separator = (pos != std::string::npos);
-      const bool is_expected = this->Contains(_expected_value_flags, current_flag);
-      if (has_separator && is_expected) {
-        _arguments[current_flag] = argv[i] + pos + 1;
-        continue;
-      }
-
-      // If all else fails, set this as a non-flag
-      _nonflags.push_back(argv[i]);
-    }
-  }
-
-  bool Has(const std::string& flag) const {
-    if (flag.empty()) { throw SargsError("Flag unspecified"); }
-    return (_arguments.find(flag) != _arguments.end());
-  }
-
-  std::string GetNonFlag(const size_t index) const {
-    if (index > _nonflags.size()) {
-      throw SargsError("Nonflag at index " + std::to_string(index) +
-        " not specified");
-    }
-    return _nonflags.at(index);
-  }
-
-  std::vector<std::string> GetNonFlags() const {
-    std::vector<std::string> nonflags;
-    for (size_t i = 0; i < _nonflags.size(); ++i)
-      nonflags.push_back(std::string(_nonflags[i]));
-    return nonflags;
-  }
-
-  std::map<std::string, std::string> GetFlags() const {
-    std::map<std::string, std::string> result;
-    for (auto& iter : _arguments)
-      if (iter.second != nullptr)
-        result[iter.first] = std::string(iter.second);
-      else
-        result[iter.first] = "";
-
-    return result;
-  }
-
-  std::string GetValue(const std::string& flag) const {
-    if (flag.empty()) { throw SargsError("Flag unspecified"); }
-
-    auto iter = _arguments.find(flag);
-    if (iter == _arguments.end())
-      return {};
-
-    return std::string(iter->second);
-  }
-
-  void Print() const {
-    printf("Flags\n");
-    for (auto pair_iter : _arguments) {
-      printf(" %s = %s\n", pair_iter.first.c_str(), pair_iter.second);
-    }
-
-    printf("\nNonflags\n");
-    for (auto iter : _nonflags) {
-      printf(" %s\n", iter);
-    }
-  }
-
-  std::string GetBinary() const {
-    return _binary;
-  }
-
-  void AddExpectedFlag(const std::string& flags) {
-    _expected_flags.push_back(flags);
-  }
-
-  void AddExpectedValueFlag(const std::string& value_flags) {
-    _expected_value_flags.push_back(value_flags);
-  }
-
- private:
-  std::vector<std::string> _expected_flags;
-  std::vector<std::string> _expected_value_flags;
-  std::map<std::string, char*> _arguments;
-  std::vector<char*> _nonflags;
-  std::string _binary;
-
-  bool IsFlag(char* arg) {
-    if (arg[0] == '-') return true;
-    return false;
-  }
-
-  bool Contains(const std::vector<std::string>& to_search, const std::string& what) {
-    return (std::find(std::begin(to_search), std::end(to_search), what) != std::end(to_search));
-  }
-};
-
 struct Argument {
   Argument(const std::string& _flag,
            const std::string& _alias,
            const std::string& _description,
-           const bool _value = false) :
+           const bool _value) :
     flag(_flag), alias(_alias), description(_description), value(_value) {}
 
   Argument(const std::string& _flag,
            const std::string& _alias,
            const std::string& _description,
-           const std::string& _fallback,
-           const bool _value = false) :
+           const bool _value,
+           const std::string& _fallback) :
     flag(_flag), alias(_alias), description(_description), fallback(_fallback), value(_value) {}
 
   std::string flag;
@@ -210,30 +69,32 @@ class Args {
     if (_help_enabled)
       this->AddOptionalFlag("--help", "-h", "Print usage and options information");
 
-    this->GenerateFlagUsage();
-    _parser.Parse(argc, argv);
-    for (auto iter : _parser.GetFlags())
-      _arguments[iter.first] = iter.second;
     this->GenerateUsage();
-
-    const bool help_specified = _parser.Has("--help") || _parser.Has("-h");
-    bool usage = (_help_enabled && help_specified);
-    try { this->Validate(); }
-    catch (...) {
-      if (_throw_on_validation && !usage) throw;
-      usage = true;
-    }
+    std::string result = this->Parse(argc, argv);
+    const bool help_specified = this->Has("--help") || this->Has("-h");
+    const bool usage = (_help_enabled && help_specified) || !result.empty();
 
     if (usage) {
-      this->PrintUsage(std::cout);
-      std::stringstream stream;
-      this->PrintUsage(stream);
-      throw SargsUsage(stream.str());
+      if (_usage_enabled) {
+        if (!result.empty())
+          std::cout << "\n" << result << "\n"  << std::endl;
+        this->PrintUsage(std::cout);
+      }
+
+      if (_exit_enabled)
+        exit(0);
     }
+
+    this->AddFallbackValues();
   }
 
   bool GetAsString(const std::string& flag, std::string& value) const {
-    if (flag.empty()) { throw SargsError("Flag query empty"); }
+    if (flag.empty()) {
+      if (_exceptions_enabled)
+        throw SargsError("Flag query empty");
+      else
+        return false;
+    }
 
     auto iter = _arguments.find(flag);
     if (iter == _arguments.end())
@@ -245,12 +106,17 @@ class Args {
   std::string GetAsString(const std::string& flag) const {
     std::string value;
     if (!this->GetAsString(flag, value))
-      throw SargsError(flag + " was not specified");
+      return "";
     return value;
   }
 
   bool GetAsFloat(const std::string& flag, float& value) const {
-    if (flag.empty()) { throw SargsError("Flag query empty"); }
+    if (flag.empty()) {
+      if (_exceptions_enabled)
+        throw SargsError("Flag query empty");
+      else
+        return false;
+    }
 
     auto iter = _arguments.find(flag);
     if (iter == _arguments.end())
@@ -268,12 +134,17 @@ class Args {
   float GetAsFloat(const std::string& flag) const {
     float value;
     if (!this->GetAsFloat(flag, value))
-      throw SargsError(flag + " was not specified");
+      return 0.0;
     return value;
   }
 
   bool GetAsInt64(const std::string& flag, int64_t& value) const {
-    if (flag.empty()) { throw SargsError("Flag query empty"); }
+    if (flag.empty()) {
+      if (_exceptions_enabled)
+        throw SargsError("Flag query empty");
+      else
+        return false;
+    }
 
     auto iter = _arguments.find(flag);
     if (iter == _arguments.end())
@@ -283,8 +154,10 @@ class Args {
     const int64_t myvalue = std::strtol(value_str.c_str(), nullptr, 0);
     const bool range_error = (errno == ERANGE);
     if (range_error || (myvalue == 0 && flag != "0")) {
-      throw SargsError("Could not convert " +  value_str +
-        " to int64_t");
+      if (_exceptions_enabled)
+        throw SargsError("Could not convert " +  value_str + " to int64_t");
+      else
+        return false;
     }
 
     value = myvalue;
@@ -294,7 +167,10 @@ class Args {
   int64_t GetAsInt64(const std::string& flag) const {
     int64_t value;
     if (!this->GetAsInt64(flag, value))
-      throw SargsError(flag + " was not specified");
+      if (_exceptions_enabled)
+        throw SargsError(flag + " was not specified");
+      else
+        return 0;
     return value;
   }
 
@@ -303,33 +179,33 @@ class Args {
   }
 
   std::string GetNonFlag(const size_t index) const {
-    return _parser.GetNonFlag(index);
+    return _nonflags.at(index);
   }
 
-  void AddRequiredFlag(const std::string& flag, const std::string& alias,
-                       const std::string& description, bool value = false) {
-    _required.emplace_back(flag, alias, description, value);
-    this->AddExpectedFlagToParser(flag, value);
-    this->AddExpectedFlagToParser(alias, value);
+  void AddRequiredFlag(const std::string& flag, const std::string& alias, const std::string& description) {
+    _required.emplace_back(flag, alias, description, false);
   }
 
-  void AddOptionalFlag(const std::string& flag, const std::string& alias,
-                       const std::string& description, bool value = false) {
-    _optional.emplace_back(flag, alias, description, value);
-    this->AddExpectedFlagToParser(flag, value);
-    this->AddExpectedFlagToParser(alias, value);
+ void AddRequiredFlagValue(const std::string& flag, const std::string& alias, const std::string& description) {
+    _required.emplace_back(flag, alias, description, true, "");
+ }
+
+  void AddRequiredFlagValue(const std::string& flag, const std::string& alias, const std::string& description,
+                            const std::string& fallback) {
+    _required.emplace_back(flag, alias, description, true, fallback);
   }
 
-  void AddOptionalFlag(const std::string& flag, const std::string& alias,
-                       const std::string& description, const std::string& fallback,
-                       bool value = false) {
-    _optional.emplace_back(flag, alias, description, fallback, value);
-    if (!flag.empty())
-      _arguments[flag] = fallback;
-    if (!alias.empty())
-      _arguments[alias] = fallback;
-    this->AddExpectedFlagToParser(flag, value);
-    this->AddExpectedFlagToParser(alias, value);
+  void AddOptionalFlag(const std::string& flag, const std::string& alias, const std::string& description) {
+    _optional.emplace_back(flag, alias, description, false);
+  }
+
+  void AddOptionalFlagValue(const std::string& flag, const std::string& alias, const std::string& description) {
+    _optional.emplace_back(flag, alias, description, true, "");
+  }
+
+  void AddOptionalFlagValue(const std::string& flag, const std::string& alias, const std::string& description,
+                            const std::string& fallback) {
+    _optional.emplace_back(flag, alias, description, true, fallback);
   }
 
   void RequireNonFlags(const int count) {
@@ -356,131 +232,185 @@ class Args {
     _help_enabled = false;
   }
 
-  void ThrowOnValidation() {
-    _throw_on_validation = true;
+  void DisableExit() {
+    _exit_enabled = false;
+  }
+
+  void DisableExceptions() {
+    _exceptions_enabled = false;
+  }
+
+  void DisableUsage() {
+    _usage_enabled = false;
   }
 
  private:
-  FlagParser _parser;
   std::vector<Argument> _required;
   std::vector<Argument> _optional;
   std::map<std::string, std::string> _arguments;
+  std::vector<std::string> _nonflags;
+  std::string _binary;
   std::string _flag_description;
   std::string _epilogue;
   std::string _preamble;
   size_t _nonflags_required = 0;
   bool _help_enabled = true;
+  bool _exit_enabled = true;
   bool _throw_on_validation = false;
+  bool _exceptions_enabled = true;
+  bool _usage_enabled = true;
 
-  void AddExpectedFlagToParser(const std::string& flag, const bool value) {
-    if (flag.empty())
-        return;
+  bool CheckIfNonValueFlag(const std::string& flag) const {
+    for (auto iter : _required) {
+      if (flag == iter.flag || flag == iter.alias)
+        return !iter.value;
+    }
 
-    if (value)
-      _parser.AddExpectedValueFlag(flag);
-    else
-      _parser.AddExpectedFlag(flag);
+    for (auto iter : _optional) {
+      if (flag == iter.flag || flag == iter.alias)
+        return !iter.value;
+    }
+
+    return false;
   }
 
-  void AddArgument(Argument& iter) {
-      if (!_parser.Has(iter.flag) && !_parser.Has(iter.alias))
-        throw SargsUsage("Must specify " + iter.flag + " or " + iter.alias);
-      std::string value;
-      if (iter.value) {
-        std::string flag_value = _parser.GetValue(iter.flag);
-        std::string alias_value = _parser.GetValue(iter.alias);
-        if (flag_value.empty() && alias_value.empty())
-          throw SargsUsage("Must specify a value for " + iter.flag + " or " + iter.alias);
-        value = flag_value.empty() ? alias_value : flag_value;
+  bool CheckIfValueFlag(const std::string& flag) const {
+    for (auto iter : _required) {
+      if (flag == iter.flag || flag == iter.alias)
+        return iter.value;
+    }
+
+    for (auto iter : _optional) {
+      if (flag == iter.flag || flag == iter.alias)
+        return iter.value;
+    }
+
+    return false;
+  }
+
+  std::string CheckForRequiredFlags() {
+    for (auto iter : _required) {
+      auto arg_iter = _arguments.find(iter.flag);
+      if (arg_iter != _arguments.end()) {
+        if (iter.value && arg_iter->second.empty()) {
+          std::stringstream err;
+          err << "Must specify value for " + iter.flag;
+          return err.str();
+        }
+
+        _arguments[iter.alias] = arg_iter->second;
+        continue;
       }
-      _arguments[iter.flag] = value;
-      _arguments[iter.alias] = value;
+      arg_iter = _arguments.find(iter.alias);
+      if (arg_iter != _arguments.end() && !arg_iter->second.empty()) {
+        if (iter.value && arg_iter->second.empty()) {
+          std::stringstream err;
+          err << "Must specify value for " + iter.alias;
+          return err.str();
+        }
+
+        _arguments[iter.flag] = arg_iter->second;
+        continue;
+      }
+      std::stringstream err;
+      err << "Must specify " + iter.flag;
+      if (!iter.alias.empty())
+        err << " or " + iter.alias;
+      return err.str();
+    }
+    return "";
   }
 
-  void Validate() {
-    for (auto& iter : _required)
-      this->AddArgument(iter);
+  bool TryFlagValueSplit(const std::string& arg, std::pair<std::string, std::string>& flag_value) {
+    size_t pos = arg.find_first_of('=');
+    std::string current_flag(arg.substr(0, pos));
+    const bool has_separator = (pos != std::string::npos);
+    const bool is_expected = this->CheckIfValueFlag(current_flag);
+    if (has_separator && is_expected) {
+      flag_value.first = current_flag;
+      flag_value.second = arg.substr(pos + 1);
+      return true;
+    }
+    return false;
+  }
 
-    for (auto iter : _optional)
-      this->AddArgument(iter);
+  void AddFallbackValues() {
+    for (auto iter : _optional) {
+      auto flag_iter = _arguments.find(iter.flag);
+      if (flag_iter == _arguments.end() && !iter.fallback.empty())
+        _arguments[iter.flag] = iter.fallback;
 
-    // std::vector<std::pair<std::string, std::string>> to_add;
-    // for (size_t i = 0; i < _required.size(); ++i) {
-    //   const std::string flag = _required[i].flag;
-    //   auto iter = _arguments.find(flag);
-    //   if (iter == _arguments.end()) {
-    //     std::string alias = _required[i].alias;
-    //     if (alias.empty())
-    //       throw SargsError(flag + " required, but not specified");
-
-    //     iter = _arguments.find(alias);
-    //     if (iter == _arguments.end())
-    //       throw SargsError(flag + " or " + alias + " required, but not specified");
-
-    //     if (_required[i].value && iter->second.empty())
-    //       throw SargsError("No value specified for " + alias);
-
-    //     // Add mapping for flag to alias's result
-    //     to_add.push_back(std::make_pair(flag, _arguments[alias]));
-    //   } else if (!_required[i].alias.empty()) {
-    //     const std::string alias = _required[i].alias;
-    //     auto alias_iter = _arguments.find(alias);
-    //     if (alias_iter != _arguments.end())
-    //       throw SargsError("Cannot specify " + flag + " and " + alias + ", they mean the same thing");
-
-    //     if (_required[i].value && iter->second.empty())
-    //       throw SargsError("No value specified for " + flag);
-
-    //     // Add a mapping for alias to flag's result
-    //     to_add.push_back(std::make_pair(alias, iter->second));
-    //   }
-    // }
-
-    // for (size_t i = 0; i < _optional.size(); ++i) {
-    //   const std::string flag = _optional[i].flag;
-    //   auto iter = _arguments.find(flag);
-    //   if (iter == _arguments.end()) {
-    //     std::string alias = _optional[i].alias;
-    //     if (alias.empty())
-    //       continue;
-
-    //     iter = _arguments.find(alias);
-    //     if (iter == _arguments.end()) {
-    //       continue;
-    //     }
-
-    //     if (_optional[i].value && iter->second.empty())
-    //       throw SargsError("No value specified for " + alias);
-
-    //     // Add mapping for flag to alia's result
-    //     to_add.push_back(std::make_pair(flag, iter->second));
-    //   } else if (!_optional[i].alias.empty()) {
-    //     const std::string alias = _optional[i].alias;
-    //     auto alias_iter = _arguments.find(alias);
-    //     if (alias_iter != _arguments.end()) {
-    //       throw SargsError("Cannot specify " + flag + " and " + alias +
-    //                                ", they mean the same thing");
-    //     }
-
-    //     if (_optional[i].value && iter->second.empty())
-    //       throw SargsError("No value specified for " + flag);
-
-    //     // Add a mapping for alias to flag's result
-    //     to_add.push_back(std::make_pair(alias, iter->second));
-    //   }
-    // }
-
-    if (_parser.GetNonFlags().size() < _nonflags_required) {
-      throw SargsError("Must specify at least " +
-        std::to_string(_nonflags_required) + " non-flags");
+      auto alias_iter = _arguments.find(iter.alias);
+      if (alias_iter == _arguments.end() && !iter.fallback.empty())
+        _arguments[iter.alias] = iter.fallback;
     }
 
-    if (_parser.GetNonFlags().size() > _nonflags_required) {
-      throw SargsError("Unrecognized flags used");
+    for (auto iter : _required) {
+      auto flag_iter = _arguments.find(iter.flag);
+      if (flag_iter == _arguments.end() && !iter.fallback.empty())
+        _arguments[iter.flag] = iter.fallback;
+
+      auto alias_iter = _arguments.find(iter.alias);
+      if (alias_iter == _arguments.end() && !iter.fallback.empty())
+        _arguments[iter.alias] = iter.fallback;
+    }
+  }
+
+  std::string Parse(int argc, char* argv[]) {
+    _binary = argv[0];
+    const int total_flags = _required.size() + _optional.size();
+    int flags_encountered = 0;
+    bool delim_encountered = false;
+    for (int i = 1; i < argc; ++i) {
+      // Check if we encountered the non-flag delimiter
+      const std::string current(argv[i]);
+      if (current == std::string("--")) {
+        delim_encountered = true;
+        continue;
+      }
+
+      // Check for explicit non-flags
+      if (delim_encountered) {
+        _nonflags.push_back(argv[i]);
+        continue;
+      }
+
+      if (this->CheckIfNonValueFlag(current)) {
+        _arguments[current] = "";
+        ++flags_encountered;
+        if (flags_encountered >= total_flags)
+          delim_encountered = true;
+        continue;
+      }
+
+      if (this->CheckIfValueFlag(current)) {
+        if (i + 1 == argc)
+          return "Must set value for " + current;
+        _arguments[current] = argv[i + 1];
+        i++;
+        flags_encountered++;
+        if (flags_encountered >= total_flags)
+          delim_encountered = true;
+        continue;
+      }
+
+      std::pair<std::string, std::string> flag_value;
+      if (this->TryFlagValueSplit(current, flag_value)) {
+        _arguments[flag_value.first] = flag_value.second;
+        flags_encountered++;
+        if (flags_encountered >= total_flags)
+          delim_encountered = true;
+        continue;
+      }
+
+      // Otherwise set to non-flag
+      _nonflags.push_back(argv[i]);
     }
 
-    // for (auto& iter : to_add)
-    //   _arguments[iter.first] = iter.second;
+    if (_nonflags.size() != _nonflags_required)
+      return "Must specify " + std::to_string(_nonflags_required) + " non-flags";
+
+    return this->CheckForRequiredFlags();
   }
 
   size_t DetermineNumCharsToWrite(const std::string& description) const {
@@ -543,7 +473,7 @@ class Args {
     return output.str();
   }
 
-  void GenerateFlagUsage() {
+  void GenerateUsage() {
     std::stringstream output;
     if (_required.size() > 0)
       output << "\n  Required flags:\n";
@@ -554,16 +484,13 @@ class Args {
     output << this->GenerateArgumentUsage(_optional);
 
     if (_nonflags_required > 0) {
-      output << "\n  " << _nonflags_required << " non-flags are required"
-             << std::endl;
+      output << "\n  " << _nonflags_required << " non-flags are required" << std::endl;
     }
 
     _flag_description = output.str();
-  }
 
-  void GenerateUsage() {
-    std::stringstream output;
-    output << "Usage: " << _parser.GetBinary() << ' ';
+    output.str("");
+    output << "Usage: " << _binary << ' ';
     if (_optional.size() > 0) {
       for (size_t i = 0; i < _optional.size(); ++i) {
         output << "<" << _optional[i].flag;
@@ -602,34 +529,26 @@ class Args {
   }
 };
 
-// Initializes and validates the configuration for the arguments provided
-// No return value. Can throw.
 #define SARGS_INITIALIZE(argc, argv) \
   sargs::Args::Default().Initialize(argc, argv)
 
-// Tell Sargs that a flag is required and requires no value to be specified
-// Both flag and alias will be available for lookup once Sargs is initialized
-// even if the user only specified one. description is used just for usage
-// information. If a value is specified it is stored but ignored.
 #define SARGS_REQUIRED_FLAG(flag, alias, description) \
   sargs::Args::Default().AddRequiredFlag(flag, alias, description)
 
-// Tell sargs that a flag is required and does require a value. Same behavior
-// as SARGS_REQUIRED_FLAG
 #define SARGS_REQUIRED_FLAG_VALUE(flag, alias, description) \
-  sargs::Args::Default().AddRequiredFlag(flag, alias, description, true)
+  sargs::Args::Default().AddRequiredFlagValue(flag, alias, description, "")
 
-// Tell sargs that there might be an optional flag that may not have value.
+#define SARGS_REQUIRED_FLAG_VALUE_DEFAULT(flag, alias, description, fallback) \
+  sargs::Args::Default().AddRequiredFlagValue(flag, alias, description, fallback)
+
 #define SARGS_OPTIONAL_FLAG(flag, alias, description) \
   sargs::Args::Default().AddOptionalFlag(flag, alias, description)
 
-// Tell sargs that there might be an optional flag but it must have a value
 #define SARGS_OPTIONAL_FLAG_VALUE(flag, alias, description) \
-  sargs::Args::Default().AddOptionalFlag(flag, alias, description, true)
+  sargs::Args::Default().AddOptionalFlagValue(flag, alias, description, "")
 
-// Tell sargs that there might be an optional flag but it must have a value
 #define SARGS_OPTIONAL_FLAG_VALUE_DEFAULT(flag, alias, description, fallback) \
-  sargs::Args::Default().AddOptionalFlag(flag, alias, description, fallback, true)
+  sargs::Args::Default().AddOptionalFlagValue(flag, alias, description, fallback)
 
 // Replace the default preamble with a custom one
 #define SARGS_SET_PREAMBLE(preamble) \
@@ -680,9 +599,13 @@ class Args {
 #define SARGS_DISABLE_HELP() \
   sargs::Args::Default().DisableHelp()
 
-// Allow the argument validation to throw SargsErrors on the problems
-// it finds. Description strings will be provided in the exceptions thrown.
-#define SARGS_VALIDATION_THROWS() \
-  sargs::Args::Default().ThrowOnValidation()
+#define SARGS_DISABLE_EXIT() \
+  sargs::Args::Default().DisableExit()
+
+#define SARGS_DISABLE_EXCEPTIONS() \
+  sargs::Args::Default().DisableExceptions()
+
+#define SARGS_DISABLE_USAGE() \
+  sargs::Args::Default().DisableUsage()
 
 }  // namespace sargs
