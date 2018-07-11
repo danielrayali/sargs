@@ -1,10 +1,10 @@
 # Simple Args
 
-Simple Args (sargs) is a header-only C++ arguments parser. I wrote this so I would never have to integrate with a complicated thirdparty argument parser or write my own again. This parser is simple and has its pros and cons when compared to other libraries like gflags or Poco's argument parsing. It provides the bare minumum of features to keep it simple and integrate quickly into a new or existing project.
+Simple Args (sargs) is a header-only C++ arguments parser. I wrote this so I would never have to integrate with a complicated thirdparty argument parser or write my own again. It attempts to provide the bare minumum of features to keep it simple and integrate quickly into a new or existing project.
 
 ## Quick Start Guide
 
-sargs is header only, so just make sure it is available through your include directories. You need to put some code in your main function, or somwhere near there with access to the initial argument variables. These variables are not modified.
+sargs is header only, so just make sure it is available through your include directories. You need to put some code in your main function, or somwhere near there with access to the initial argument variables (argc and argv). These variables (argc and argv) are not modified.
 
 ```cpp
 //
@@ -39,33 +39,27 @@ Worker::Worker() {
 
 For more details on the full API, check the github [Wiki page](https://github.com/drali/sargs/wiki/API-Documentation).
 
-## Installation
-
-Just include sargs.h in your include directories and you're good to go.
-
 ## Argument Format
 
-Sargs expects certain conditions from the argument format. The general assembly of arguments is:
+Sargs allows the user to specify optional and required flags.  values or no values. There is also a concept of "non-flags". Non-flags are any unrecognized flags encountered, or ones after the "--" delimiter. During flag parsing, flags are parsed in order of the index they are specified in the main's argv array. Each one is checked to ensure it is specified and expected. The general assembly of arguments is:
 
-```./program <--optional|--flags> --required --flags -- nonflag1 nonflag2```
+```./program <--optional|--flags> --required=3.14 --flags -- nonflag1 nonflag2```
 
-Optional flags and required flags need not be in a particular order. These must however come before non-flags. Non-flags can be designated once the separator (```--```) is optionally specified on the command line. Notice the separation between ```--``` and ```nonflag1```.
+Optional flags, required flags, and non-flags need not be in a particular order. Non-flags are assumed once the separator (```--```) is encountered.
 
-Sargs expects flags to start with a hyphen (```-```). You can specify values on these flags using equals or with just a space.
+Value flags require a value to be specified on the command line. You can specify values on these flags using equals or with just a space. Currently, it does not support non-spaced alpha-numeric flags, such as "-p2".
 
-```./program --flag1=value1 --flag2 value2```
-
-During flag parsing, values will be associated with flags until the separator is encountered. If the separator is not specified Sargs will assume the first non-flag, non-value argument it encounters is the start of the non-flags. For example
-
-```./program --flag1 value1 nonflag1```
-
-has one flag (```--flag1```) with the associated value (```value1```) and one nonflag (```nonflag1```).
+```./program --flag1=value1 --flag2 value2``` 
 
 ## Features
 
-### Required Arguments
+### Disabling Usage and Exit
 
-If you have flags that must be specified to run correctly you can specify them with ```SARGS_REQUIRED_FLAG```. If there needs to be a value associated with the flag use ```SARGS_REQUIRED_FLAG_VALUE```. If this value is not specified usage information will be displayed by default. If you would like ```SARGS_INITIALIZE()``` to throw a ```std::runtime_error``` instead, use ```SARGS_THROW_ON_VALIDATION()```.
+By default, if an unexpected flag is encountered or the wrong number of non-flags usage will be printed to std::cout and call std::exit() with the value of zero. Sargs allows the user to disable the printing of usage to std::cout if an error is encountered with ```SARGS_DISABLE_USAGE()```. Sargs also allows you to disable the call to std::exit() with ```SARGS_DISABLE_EXIT()```.
+
+### Required Argument
+
+If you have flags that must be specified to run correctly you can specify them with ```SARGS_REQUIRED_FLAG```. If there needs to be a value associated with the flag use ```SARGS_REQUIRED_FLAG_VALUE```. If this value is not specified usage will be displayed and std::exit will be called.
 
 ### Default Flag Description and Preamble
 
@@ -101,26 +95,21 @@ SARGS_GET_INT64(flag)
 SARGS_GET_STRING(flag)
 SARGS_GET_FLOAT(flag)
 ```
+### Exceptions
 
-### Non-Zero Non-Flags Can Be Required
+By default, errors encountered during initialization will print usage and exit with a return code of zero. When calling one of the value conversion functions, it will throw if a flag's value was not specified or if the flag wasn't specified at all. Because parsing happens at initialization, this means the flag must be optional and require a value to get to a value conversion call.
 
-Use ```SARGS_REQUIRE_NONFLAGS()``` to ensure the user is required to set a specific number of non-flags. These can be iterated over the vector of strings returned by ```SARGS_GET_NONFLAGS()```.
+### Non-Flags
 
-### Argument Specification Not Required
+Use ```SARGS_REQUIRE_NONFLAGS()``` to ensure the user is required to set a specific number of non-flags. These can be iterated over the vector of strings returned by ```SARGS_GET_NONFLAGS()``` or accessed by the index it was specified with ```SARGS_GET_NONFLAG(index)```.
 
-If you want to get started fast and don't care about Usage, you can just initialize sargs and start accessing flags as needed, where they are needed. Optional arguments exist only to provide context to the Usage information.
+### Aliases
 
-### Header Only
-
-Just include sargs.h and you're good to go.
-
-### Avilable Everywhere
-
-Once sargs has been initialized, the variables can be accessed through the static global singleton using the provided macros.
+When specifing flags, Sargs allows the user to specify an alias as well. All values with flags and aliases can be accessed using either string with the documented getters.
 
 ## Bugs/Comments
 
-Please open github issues for this software or create a pull request if there is something that needs changing.
+Please open github issues for this software or create a pull request if there is something that needs changing. All are welcome!
 
 ## License
 
