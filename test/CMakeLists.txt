@@ -5,9 +5,5 @@ endif()
 
 include_directories (${CMAKE_SOURCE_DIR}/src)
 
-add_executable (sargs_test
-  main.cc)
-
-add_executable (simple
-  simple.cc)
-target_link_libraries (simple)
+add_executable (sargs_test main.cc)
+target_link_libraries (sargs_test)
