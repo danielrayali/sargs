@@ -42,7 +42,7 @@ $ ./binary
 
 Must specify --foo or -f
 
-Usage:  <--bar|> <--help|-h> --foo=value 
+Usage:  <--bar> <--help|-h> --foo=value 
 
   Required flags:
     --foo=value/-f=value      The description of foo
