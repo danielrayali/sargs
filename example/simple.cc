@@ -2,12 +2,16 @@
 
 using namespace std;
 
+#include <sargs.h>
+
 int main(int argc, char* argv[]) {
-  SARGS_OPTIONAL_FLAG("--display", "-d", "Displays");
-  SARGS_OPTIONAL_FLAG("--convert", "-c", "Converts");
-  SARGS_REQUIRE_NONFLAGS(1);
+  SARGS_REQUIRED_FLAG_VALUE("--foo", "-f", "The description of foo");
+  SARGS_OPTIONAL_FLAG("--bar", "", "The bar flag to help");
   SARGS_INITIALIZE(argc, argv);
 
-  cout << "Hello, world!" << endl;
+  //
+  // Run program code
+  //
+
   return 0;
 }

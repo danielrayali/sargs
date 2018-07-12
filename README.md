@@ -37,33 +37,44 @@ Worker::Worker() {
 }
 ```
 
+```
+./binary
+
+Must specify --foo or -f
+
+Usage:  <--bar|> <--help|-h> --foo=value 
+
+  Required flags:
+    --foo=value/-f=value      The description of foo
+
+  Optional flags:
+    --bar                     The bar flag to help
+    --help/-h                 Print usage and options information
+```
+
 For more details on the full API, check the github [Wiki page](https://github.com/drali/sargs/wiki/API-Documentation).
 
-## Argument Format
+## Flag Types
 
-Sargs allows the user to specify optional and required flags.  values or no values. There is also a concept of "non-flags". Non-flags are any unrecognized flags encountered, or ones after the "--" delimiter. During flag parsing, flags are parsed in order of the index they are specified in the main's argv array. Each one is checked to ensure it is specified and expected. The general assembly of arguments is:
+Flag are parsed as either optional or required, can require a value, or may be a "non-flag". Non-flags are unrecognized flags or anything encountered after the delimiter. The delimiter is two hyphens "--". This allows the command line user to specify flags in any order as long as they are specified in the source code. Flags are parsed in order of the index they are stored in the main()'s argv array. Each one is checked to ensure it is specified and expected. An example command line might be:
 
-```./program <--optional|--flags> --required=3.14 --flags -- nonflag1 nonflag2```
-
-Optional flags, required flags, and non-flags need not be in a particular order. Non-flags are assumed once the separator (```--```) is encountered.
+```./program <--optional_flag> --required_flag=3.14 -- nonflag```
 
 Value flags require a value to be specified on the command line. You can specify values on these flags using equals or with just a space. Currently, it does not support non-spaced alpha-numeric flags, such as "-p2".
 
-```./program --flag1=value1 --flag2 value2``` 
-
 ## Features
 
-### Disabling Usage and Exit
+### Default Values for Value Flags
 
-By default, if an unexpected flag is encountered or the wrong number of non-flags usage will be printed to std::cout and call std::exit() with the value of zero. Sargs allows the user to disable the printing of usage to std::cout if an error is encountered with ```SARGS_DISABLE_USAGE()```. Sargs also allows you to disable the call to std::exit() with ```SARGS_DISABLE_EXIT()```.
+You can specify defaults for any flags that are specified with the ```*_VALUE_DEFAULT()``` APIs.
 
-### Required Argument
+### Flag Aliasing
 
-If you have flags that must be specified to run correctly you can specify them with ```SARGS_REQUIRED_FLAG```. If there needs to be a value associated with the flag use ```SARGS_REQUIRED_FLAG_VALUE```. If this value is not specified usage will be displayed and std::exit will be called.
+Flags can be specified with an alias. Both the flag and the alias are available through the normal getter interfaces, even if the command line user only specified one.
 
-### Default Flag Description and Preamble
+### Well Formatted Usage
 
-A default preamble and flag description will be generated for you. The preamble is printed before the flag descriptions and the epilogue is printed after the flag descriptions. By default there is no epilogue. The default preamble is a basic usage format. Below is the preamble and flag description from the Quick Start section.
+A default usage message will be generated for you. This is broken down into the preamble, the flag description and the epilogue. The preamble is printed before the flag descriptions and the epilogue is printed after the flag descriptions. By default there is no epilogue. The default preamble is a basic usage example. The flag description describes all required and optional flags. For example:
 
 ```
 Usage: ./program <--bar|--help|-h> --foo=value
@@ -78,34 +89,33 @@ Usage: ./program <--bar|--help|-h> --foo=value
 
 ### Disable Defaults
 
-There are a few things that are default behaviour. Below is a list of these default behaviors and the corresponding macro to change or disable it.
+Some default behaviors are configurable and able to be disabled. Below are the behaviors and the corresponding macros to change or disable it.
 
+- Disable printing usage to cout on a parse error: ```SARGS_DISABLE_USAGE()```
+- DIsable calling std::exit() on a parse error: ```SARGS_DISABLE_EXIT()```
 - Replace default flag description string: ```SARGS_SET_USAGE()```
 - Replace default preamble: ```SARGS_SET_PREAMBLE()```
 - Set an epilogue: ```SARGS_SET_EPILOGUE()```
-- Throw during validation instead of printing usage and exiting: ```SARGS_VALIDATION_THROWS()```
-- Disable predefined ```--help```/```-h``` flags and behavior: ```SARGS_DISABLE_HELP()```.
+- Disable predefined ```--help```/```-h``` flags: ```SARGS_DISABLE_HELP()```
+- Disable exceptions: ```SARGS_DISABLE_EXCEPTIONS()```
 
 ### Basic Value Conversions
 
-Internally each argument value is kept as a string. These can be converted to a limited number of other types for you with proper error handling. If it can not be converted (e.g. Trying to get "abc" as a float) a ```std::runtime_error``` will be thrown. If no value is specified, ```SARGS_INITIALIZE()``` will print usage and exit or throw. These macros will return the value. For optional values, use ```SARGS_HAS()``` before converting the value.
+Internally each argument value is kept as a string. These can be converted to a limited number of other types for you with proper error handling. If it can not be converted (e.g. Trying to get "abc" as a float) a ```std::runtime_error``` will be thrown. If no value is specified, ```SARGS_INITIALIZE()``` will print usage and exit or throw. These macros will return the value. For optional values, use ```SARGS_HAS()``` before converting the value or a SargsError may be thrown if the flag was not specified.
 
 ```
 SARGS_GET_INT64(flag)
 SARGS_GET_STRING(flag)
 SARGS_GET_FLOAT(flag)
 ```
+
 ### Exceptions
 
-By default, errors encountered during initialization will print usage and exit with a return code of zero. When calling one of the value conversion functions, it will throw if a flag's value was not specified or if the flag wasn't specified at all. Because parsing happens at initialization, this means the flag must be optional and require a value to get to a value conversion call.
+By default, errors encountered during initialization will print usage and exit with a return code of zero. When calling one of the value conversion functions, it will throw if a flag or flag value are not specified on the command line and no default was set.
 
 ### Non-Flags
 
 Use ```SARGS_REQUIRE_NONFLAGS()``` to ensure the user is required to set a specific number of non-flags. These can be iterated over the vector of strings returned by ```SARGS_GET_NONFLAGS()``` or accessed by the index it was specified with ```SARGS_GET_NONFLAG(index)```.
-
-### Aliases
-
-When specifing flags, Sargs allows the user to specify an alias as well. All values with flags and aliases can be accessed using either string with the documented getters.
 
 ## Bugs/Comments
 
