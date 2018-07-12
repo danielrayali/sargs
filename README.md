@@ -38,7 +38,7 @@ Worker::Worker() {
 ```
 
 ```
-./binary
+$ ./binary
 
 Must specify --foo or -f
 
@@ -52,7 +52,7 @@ Usage:  <--bar|> <--help|-h> --foo=value
     --help/-h                 Print usage and options information
 ```
 
-For more details on the full API, check the github [Wiki page](https://github.com/drali/sargs/wiki/API-Documentation).
+For more details on the full API, check the bottom of sargs.h in the src directory.
 
 ## Flag Types
 
