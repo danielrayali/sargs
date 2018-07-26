@@ -69,8 +69,8 @@ class Args {
     if (_help_enabled)
       this->AddOptionalFlag("--help", "-h", "Print usage and options information");
 
-    this->GenerateUsage();
     std::string result = this->Parse(argc, argv);
+    this->GenerateUsage();
     const bool help_specified = this->Has("--help") || this->Has("-h");
     const bool usage = (_help_enabled && help_specified) || !result.empty();
 
@@ -431,10 +431,12 @@ class Args {
       _nonflags.push_back(argv[i]);
     }
 
-    if (_nonflags.size() != _nonflags_required)
-      return "Must specify " + std::to_string(_nonflags_required) + " non-flags";
+    if (_nonflags.size() != _nonflags_required && _nonflags_required == 0)
+      return "Unknown arguments";
+    else if (_nonflags.size() != _nonflags_required)
+      return "Unknown arguments or user must specify " + std::to_string(_nonflags_required) + " non-flags";
 
-    string result = this->CheckForValues(_required, true);
+    std::string result = this->CheckForValues(_required, true);
     if (result.empty())
       result = this->CheckForValues(_optional, false);
     return result;
@@ -518,29 +520,30 @@ class Args {
 
     output.str("");
     output << "Usage: " << _binary << ' ';
-    if (_optional.size() > 0) {
-      for (size_t i = 0; i < _optional.size(); ++i) {
-        output << "<" << _optional[i].flag;
-        if (!_optional[i].flag.empty()) {
-          if (_optional[i].value)
-            output << "=value";
-          if (!_optional[i].flag.empty())
-            output << "|";
-        }
-
-        if (!_optional[i].alias.empty()) {
-          output << _optional[i].alias;
-          if (_optional[i].value)
-            output << "=value";
-        }
-        output << "> ";
+    for (size_t i = 0; i < _optional.size(); ++i) {
+      output << "[" << _optional[i].flag;
+      if (!_optional[i].flag.empty()) {
+        if (_optional[i].value)
+          output << "=value";
       }
+
+      if (!_optional[i].alias.empty()) {
+        output << "|" << _optional[i].alias;
+        if (_optional[i].value)
+          output << "=value";
+      }
+      output << "] ";
     }
 
     for (size_t i = 0; i < _required.size(); ++i) {
       output << _required[i].flag;
       if (_required[i].value)
         output << "=value";
+      if (!_required[i].alias.empty()) {
+          output << "|" << _required[i].alias;
+          if (_required[i].value)
+            output << "=value";
+      }
       output << " ";
     }
 
