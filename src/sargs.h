@@ -308,8 +308,8 @@ class Args {
     return false;
   }
 
-  std::string CheckForRequiredFlags() {
-    for (auto iter : _required) {
+  std::string CheckForValues(const std::vector<Argument>& to_check, const bool required) {
+    for (auto iter : to_check) {
       auto arg_iter = _arguments.find(iter.flag);
       if (arg_iter != _arguments.end()) {
         if (iter.value && arg_iter->second.empty()) {
@@ -321,6 +321,7 @@ class Args {
         _arguments[iter.alias] = arg_iter->second;
         continue;
       }
+
       arg_iter = _arguments.find(iter.alias);
       if (arg_iter != _arguments.end() && !arg_iter->second.empty()) {
         if (iter.value && arg_iter->second.empty()) {
@@ -332,11 +333,14 @@ class Args {
         _arguments[iter.flag] = arg_iter->second;
         continue;
       }
-      std::stringstream err;
-      err << "Must specify " + iter.flag;
-      if (!iter.alias.empty())
-        err << " or " + iter.alias;
-      return err.str();
+
+      if (required) {
+        std::stringstream err;
+        err << "Must specify " + iter.flag;
+        if (!iter.alias.empty())
+          err << " or " + iter.alias;
+        return err.str();
+      }
     }
     return "";
   }
@@ -430,7 +434,10 @@ class Args {
     if (_nonflags.size() != _nonflags_required)
       return "Must specify " + std::to_string(_nonflags_required) + " non-flags";
 
-    return this->CheckForRequiredFlags();
+    string result = this->CheckForValues(_required, true);
+    if (result.empty())
+      result = this->CheckForValues(_optional, false);
+    return result;
   }
 
   size_t DetermineNumCharsToWrite(const std::string& description) const {
