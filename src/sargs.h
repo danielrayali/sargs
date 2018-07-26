@@ -69,8 +69,8 @@ class Args {
     if (_help_enabled)
       this->AddOptionalFlag("--help", "-h", "Print usage and options information");
 
-    this->GenerateUsage();
     std::string result = this->Parse(argc, argv);
+    this->GenerateUsage();
     const bool help_specified = this->Has("--help") || this->Has("-h");
     const bool usage = (_help_enabled && help_specified) || !result.empty();
 
@@ -308,8 +308,8 @@ class Args {
     return false;
   }
 
-  std::string CheckForRequiredFlags() {
-    for (auto iter : _required) {
+  std::string CheckForValues(const std::vector<Argument>& to_check, const bool required) {
+    for (auto iter : to_check) {
       auto arg_iter = _arguments.find(iter.flag);
       if (arg_iter != _arguments.end()) {
         if (iter.value && arg_iter->second.empty()) {
@@ -321,6 +321,7 @@ class Args {
         _arguments[iter.alias] = arg_iter->second;
         continue;
       }
+
       arg_iter = _arguments.find(iter.alias);
       if (arg_iter != _arguments.end() && !arg_iter->second.empty()) {
         if (iter.value && arg_iter->second.empty()) {
@@ -332,11 +333,14 @@ class Args {
         _arguments[iter.flag] = arg_iter->second;
         continue;
       }
-      std::stringstream err;
-      err << "Must specify " + iter.flag;
-      if (!iter.alias.empty())
-        err << " or " + iter.alias;
-      return err.str();
+
+      if (required) {
+        std::stringstream err;
+        err << "Must specify " + iter.flag;
+        if (!iter.alias.empty())
+          err << " or " + iter.alias;
+        return err.str();
+      }
     }
     return "";
   }
@@ -427,10 +431,15 @@ class Args {
       _nonflags.push_back(argv[i]);
     }
 
-    if (_nonflags.size() != _nonflags_required)
-      return "Must specify " + std::to_string(_nonflags_required) + " non-flags";
+    if (_nonflags.size() != _nonflags_required && _nonflags_required == 0)
+      return "Unknown arguments";
+    else if (_nonflags.size() != _nonflags_required)
+      return "Unknown arguments or user must specify " + std::to_string(_nonflags_required) + " non-flags";
 
-    return this->CheckForRequiredFlags();
+    std::string result = this->CheckForValues(_required, true);
+    if (result.empty())
+      result = this->CheckForValues(_optional, false);
+    return result;
   }
 
   size_t DetermineNumCharsToWrite(const std::string& description) const {
@@ -511,29 +520,30 @@ class Args {
 
     output.str("");
     output << "Usage: " << _binary << ' ';
-    if (_optional.size() > 0) {
-      for (size_t i = 0; i < _optional.size(); ++i) {
-        output << "<" << _optional[i].flag;
-        if (!_optional[i].flag.empty()) {
-          if (_optional[i].value)
-            output << "=value";
-          if (!_optional[i].flag.empty())
-            output << "|";
-        }
-
-        if (!_optional[i].alias.empty()) {
-          output << _optional[i].alias;
-          if (_optional[i].value)
-            output << "=value";
-        }
-        output << "> ";
+    for (size_t i = 0; i < _optional.size(); ++i) {
+      output << "[" << _optional[i].flag;
+      if (!_optional[i].flag.empty()) {
+        if (_optional[i].value)
+          output << "=value";
       }
+
+      if (!_optional[i].alias.empty()) {
+        output << "|" << _optional[i].alias;
+        if (_optional[i].value)
+          output << "=value";
+      }
+      output << "] ";
     }
 
     for (size_t i = 0; i < _required.size(); ++i) {
       output << _required[i].flag;
       if (_required[i].value)
         output << "=value";
+      if (!_required[i].alias.empty()) {
+          output << "|" << _required[i].alias;
+          if (_required[i].value)
+            output << "=value";
+      }
       output << " ";
     }
 
