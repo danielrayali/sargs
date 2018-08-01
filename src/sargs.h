@@ -174,6 +174,26 @@ class Args {
     return value;
   }
 
+  int32_t GetAsInt32(const std::string& flag) const {
+    int64_t value;
+    if (!this->GetAsInt64(flag, value))
+      if (_exceptions_enabled)
+        throw SargsError(flag + " was not specified");
+      else
+        return 0;
+    return static_cast<int32_t>(value);
+  }
+
+  int32_t GetAsInt8(const std::string& flag) const {
+    int64_t value;
+    if (!this->GetAsInt64(flag, value))
+      if (_exceptions_enabled)
+        throw SargsError(flag + " was not specified");
+      else
+        return 0;
+    return static_cast<int8_t>(value);
+  }
+
   bool Has(const std::string& flag) const {
     return _arguments.find(flag) != _arguments.end();
   }
@@ -491,9 +511,11 @@ class Args {
         flag_ids << "=value";
       if (!arguments[i].flag.empty() && !arguments[i].alias.empty())
         flag_ids << "/";
-      flag_ids << arguments[i].alias;
-      if (arguments[i].value)
-        flag_ids << "=value";
+      if (!arguments[i].alias.empty()) {
+        flag_ids << arguments[i].alias;
+        if (arguments[i].value)
+          flag_ids << "=value";
+      }
 
       output << std::left << std::setw(30) << flag_ids.str();
       output << std::left << this->FormatDescription(arguments[i].description);
@@ -638,6 +660,14 @@ class Args {
 // Get the value of a flag as an int64_t
 #define SARGS_GET_INT64(flag) \
   sargs::Args::Default().GetAsInt64(flag)
+
+// Get the value of a flag as an int32_t
+#define SARGS_GET_INT32(flag) \
+  sargs::Args::Default().GetAsInt32(flag)
+
+// Get the value of a flag as an int8_t
+#define SARGS_GET_INT8(flag) \
+  sargs::Args::Default().GetAsInt8(flag)
 
 // Get the value of a flag as a std::string
 #define SARGS_GET_STRING(flag) \
