@@ -331,7 +331,7 @@ class Args {
   std::string CheckForValues(const std::vector<Argument>& to_check, const bool required) {
     for (auto iter : to_check) {
       auto arg_iter = _arguments.find(iter.flag);
-      if (arg_iter != _arguments.end()) {
+      if (arg_iter != _arguments.end() && !iter.alias.empty()) {
         if (iter.value && arg_iter->second.empty()) {
           std::stringstream err;
           err << "Must specify value for " + iter.flag;
