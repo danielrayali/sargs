@@ -4,6 +4,34 @@
 using namespace sargs;
 using namespace std;
 
+void TestVector() {
+  cout << "TestVector()...";
+
+  std::string str1 = "program";
+  std::string str2 = "-c=12,24,32,64,128";
+
+  char* argv[2] = { &str1.front(), &str2.front() };
+
+  Args args;
+  args.AddRequiredFlag("-c", "", "The dash c flag");
+  args.DisableExit();
+
+  try { args.Initialize(2, argv); }
+  catch (SargsError& er) {
+      printf("Sargs error TestVector\n");
+  }
+
+  vector<string> values = args.GetAsVector("-c");
+  assert(values.size() == 5);
+  assert(values[0] == "12");
+  assert(values[1] == "24");
+  assert(values[2] == "32");
+  assert(values[3] == "64");
+  assert(values[4] == "128");
+
+  cout << "done" << endl;
+}
+
 void TestSarg1() {
   cout << "TestSarg1()...";
 
@@ -145,6 +173,7 @@ void TestNonFlags() {
 }
 
 int main(int argc, char* argv[]) {
+  TestVector();
   TestSarg1();
   TestAlias();
   TestOptional();

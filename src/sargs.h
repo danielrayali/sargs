@@ -138,6 +138,49 @@ class Args {
     return value;
   }
 
+  bool GetAsVector(const std::string& flag, std::vector<std::string>& output) const {
+    if (flag.empty()) {
+      if (_exceptions_enabled)
+        throw SargsError("Flag query empty");
+      else
+        return false;
+    }
+
+    auto iter = _arguments.find(flag);
+    if (iter == _arguments.end())
+      return false;
+
+    std::string value(iter->second);
+    size_t cur = 0;
+    size_t prev = 0;
+    while (cur != std::string::npos && prev != value.size()) {
+      cur = value.find_first_of(',', prev);
+      if (cur != std::string::npos) {
+        output.push_back(value.substr(prev, cur - prev));
+        prev = cur + 1;
+      } else {
+        output.push_back(value.substr(prev, cur));
+      }
+    }
+
+    return true;
+  }
+
+  std::vector<std::string> GetAsVector(const std::string& flag) const {
+    std::vector<std::string> output;
+    if (this->GetAsVector(flag, output))
+      return output;
+    return {};
+  }
+
+  std::string GetAsStringElement(const std::string& flag, const size_t index) {
+    std::vector<std::string> elements = this->GetAsVector(flag);
+    if (elements.size() <= index)
+      throw SargsError("Flag string " + flag + " has no index " + std::to_string(index));
+    else
+        return elements.at(index);
+  }
+
   bool GetAsInt64(const std::string& flag, int64_t& value) const {
     if (flag.empty()) {
       if (_exceptions_enabled)
@@ -656,6 +699,14 @@ class Args {
 // Gets all non-flags
 #define SARGS_GET_NONFLAGS() \
   sargs::Args::Default().GetNonFlags()
+
+// Get the value as a vector of strings
+#define SARGS_GET_VECTOR(flag) \
+  sargs::Args::Default().GetAsVector(flag)
+
+// Get an element in a flag value
+#define SARGS_GET_STRING_ELEMENT(flag, index) \
+  sargs::Args::Default().GetAsStringElement(flag, index)
 
 // Get the value of a flag as an int64_t
 #define SARGS_GET_INT64(flag) \
