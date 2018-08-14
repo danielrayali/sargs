@@ -24,6 +24,7 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
+#include <limits>
 
 namespace sargs {
 
@@ -63,29 +64,6 @@ class Args {
   static Args& Default() {
     static Args instance;
     return instance;
-  }
-
-  void Initialize(int argc, char* argv[]) {
-    if (_help_enabled)
-      this->AddOptionalFlag("--help", "-h", "Print usage and options information");
-
-    std::string result = this->Parse(argc, argv);
-    this->GenerateUsage();
-    const bool help_specified = this->Has("--help") || this->Has("-h");
-    const bool usage = (_help_enabled && help_specified) || !result.empty();
-
-    if (usage) {
-      if (_usage_enabled) {
-        if (!result.empty())
-          std::cout << "\n" << result << "\n"  << std::endl;
-        this->PrintUsage(std::cout);
-      }
-
-      if (_exit_enabled)
-        exit(0);
-    }
-
-    this->AddFallbackValues();
   }
 
   bool GetAsString(const std::string& flag, std::string& value) const {
@@ -153,7 +131,7 @@ class Args {
     const std::string value_str(iter->second);
     const int64_t myvalue = std::strtol(value_str.c_str(), nullptr, 0);
     const bool range_error = (errno == ERANGE);
-    if (range_error || (myvalue == 0 && flag != "0")) {
+    if (range_error) {
       if (_exceptions_enabled)
         throw SargsError("Could not convert " +  value_str + " to int64_t");
       else
@@ -166,31 +144,63 @@ class Args {
 
   int64_t GetAsInt64(const std::string& flag) const {
     int64_t value;
-    if (!this->GetAsInt64(flag, value))
+    if (!this->GetAsInt64(flag, value)) {
       if (_exceptions_enabled)
         throw SargsError(flag + " was not specified");
       else
         return 0;
+    }
     return value;
   }
 
   int32_t GetAsInt32(const std::string& flag) const {
     int64_t value;
-    if (!this->GetAsInt64(flag, value))
+    if (!this->GetAsInt64(flag, value)) {
       if (_exceptions_enabled)
         throw SargsError(flag + " was not specified");
       else
         return 0;
+    }
+    if (value > std::numeric_limits<int32_t>::max()) {
+      if (_exceptions_enabled)
+        throw SargsError(flag + " is too large to convert to int32_t: " + std::to_string(value));
+      else
+        return 0;
+    }
     return static_cast<int32_t>(value);
+  }
+
+  int16_t GetAsInt16(const std::string& flag) const {
+    int64_t value;
+    if (!this->GetAsInt64(flag, value)) {
+      if (_exceptions_enabled)
+        throw SargsError(flag + " was not specified");
+      else
+        return 0;
+    }
+    if (value > std::numeric_limits<int16_t>::max()) {
+      if (_exceptions_enabled)
+        throw SargsError(flag + " is too large to convert to int16_t: " + std::to_string(value));
+      else
+        return 0;
+    }
+    return static_cast<int16_t>(value);
   }
 
   int32_t GetAsInt8(const std::string& flag) const {
     int64_t value;
-    if (!this->GetAsInt64(flag, value))
+    if (!this->GetAsInt64(flag, value)) {
       if (_exceptions_enabled)
         throw SargsError(flag + " was not specified");
       else
         return 0;
+    }
+    if (value > std::numeric_limits<int8_t>::max()) {
+      if (_exceptions_enabled)
+        throw SargsError(flag + " is too large to convert to int8_t: " + std::to_string(value));
+      else
+        return 0;
+    }
     return static_cast<int8_t>(value);
   }
 
@@ -284,6 +294,29 @@ class Args {
     return _binary;
   }
 
+  void Initialize(int argc, char* argv[]) {
+    if (_help_enabled)
+      this->AddOptionalFlag("--help", "-h", "Print usage and options information");
+
+    std::string result = this->Parse(argc, argv);
+    this->GenerateUsage();
+    const bool help_specified = this->Has("--help") || this->Has("-h");
+    const bool usage = (_help_enabled && help_specified) || !result.empty();
+
+    if (usage) {
+      if (_usage_enabled) {
+        if (!result.empty())
+          std::cout << "\n" << result << "\n"  << std::endl;
+        this->PrintUsage(std::cout);
+      }
+
+      if (_exit_enabled)
+        exit(0);
+    }
+
+    this->AddFallbackValues();
+  }
+
  private:
   std::vector<Argument> _required;
   std::vector<Argument> _optional;
@@ -328,6 +361,22 @@ class Args {
     return false;
   }
 
+  std::string CheckForMissing(const std::vector<Argument>& to_check) {
+    for (auto iter : to_check) {
+      auto flag_iter = _arguments.find(iter.flag);
+      auto alias_iter = _arguments.find(iter.alias);
+      if (flag_iter == _arguments.end() && alias_iter == _arguments.end()) {
+        std::stringstream err;
+        if (!iter.flag.empty())
+          err << "Must specify " + iter.flag;
+        else
+          err << "Must specify " + iter.alias;
+        return err.str();
+      }
+    }
+    return "";
+  }
+
   std::string CheckForValues(const std::vector<Argument>& to_check, const bool required) {
     for (auto iter : to_check) {
       auto arg_iter = _arguments.find(iter.flag);
@@ -352,14 +401,6 @@ class Args {
 
         _arguments[iter.flag] = arg_iter->second;
         continue;
-      }
-
-      if (required) {
-        std::stringstream err;
-        err << "Must specify " + iter.flag;
-        if (!iter.alias.empty())
-          err << " or " + iter.alias;
-        return err.str();
       }
     }
     return "";
@@ -459,6 +500,8 @@ class Args {
     std::string result = this->CheckForValues(_required, true);
     if (result.empty())
       result = this->CheckForValues(_optional, false);
+    if (result.empty())
+      result = this->CheckForMissing(_required);
     return result;
   }
 
@@ -664,6 +707,10 @@ class Args {
 // Get the value of a flag as an int32_t
 #define SARGS_GET_INT32(flag) \
   sargs::Args::Default().GetAsInt32(flag)
+
+// Get the value of a flag as an int16_t
+#define SARGS_GET_IN16(flag) \
+  sargs::Args::Default().GetAsInt16(flag)
 
 // Get the value of a flag as an int8_t
 #define SARGS_GET_INT8(flag) \
