@@ -12,6 +12,7 @@ jobs:
     machine:
       image: circleci/classic:latest
     steps:
+      - checkout
       - run:
           command: |
             mkdir build
@@ -26,3 +27,5 @@ workflows:
     jobs:
       - deps
       - build
+          requires:
+            - deps
