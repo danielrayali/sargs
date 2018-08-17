@@ -1,5 +1,4 @@
 version: 2
-
 jobs:
   deps:
     steps:
@@ -17,7 +16,6 @@ jobs:
       - run:
           name: Get current dir
           command: pwd
-
 workflows:
   version: 2
   default_wf:
