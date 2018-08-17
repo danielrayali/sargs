@@ -1,13 +1,11 @@
 version: 2
 
-dependencies:
-  pre:
-    - run: sudo apt update && sudo apt install cmake
-
 jobs:
+  deps:
+    steps:
+      - run:
+        command: sudo apt install cmake
   build:
-    docker:
-      - image: debian:stretch
     steps:
       - checkout
       - run:
@@ -19,3 +17,17 @@ jobs:
       - run:
           name: Get current dir
           command: pwd
+
+workflows:
+  version: 2
+  default_wf:
+    jobs:
+      - deps
+      - build
+        requires:
+          - deps
+        filters:
+          braches:
+            only: master
+
+
