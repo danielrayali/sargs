@@ -6,8 +6,11 @@ jobs:
     steps:
       - checkout
       - run:
-          name: Greeting
-          command: echo Hello, world.
+          name: Make build dir
+          command: mkdir build
       - run:
-          name: Print the Current Time
-          command: date
+          name: Make CMake files
+          command: cd build && cmake ..
+      - run:
+          name: Get current dir
+          command: pwd
