@@ -1,7 +1,7 @@
 version: 2
 
 jobs:
-  deps:
+  build:
     machine:
       image: circleci/classic:latest
     steps:
@@ -14,4 +14,4 @@ workflows:
 
   deps_build:
     jobs:
-      - deps
+      - build
