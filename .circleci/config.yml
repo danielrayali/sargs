@@ -1,4 +1,14 @@
-version: 2
+workflows:
+  version: 2
+  default_wf:
+    jobs:
+      - deps
+      - build
+        requires:
+          - deps
+        filters:
+          braches:
+            only: master
 jobs:
   deps:
     steps:
@@ -16,16 +26,5 @@ jobs:
       - run:
           name: Get current dir
           command: pwd
-workflows:
-  version: 2
-  default_wf:
-    jobs:
-      - deps
-      - build
-        requires:
-          - deps
-        filters:
-          braches:
-            only: master
 
 
