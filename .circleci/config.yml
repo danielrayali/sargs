@@ -25,8 +25,8 @@ workflows:
     jobs:
       - deps
       - build
-        requires:
-          - deps
-        filters:
-          braches:
-            only: master
+          requires:
+              - deps
+          filters:
+            braches:
+              only: master
