@@ -2,31 +2,16 @@ version: 2
 
 jobs:
   deps:
+    machine:
+      image: circleci/classic:latest
     steps:
       - run:
-          name: Install CMake
-          command: sudo apt install cmake
-  build:
-    steps:
-      - checkout
-      - run:
-          name: Make build dir
-          command: mkdir build
-      - run:
-          name: Make CMake files
-          command: cd build && cmake ..
-      - run:
-          name: Get current dir
-          command: pwd
+        name: Install CMake
+        command: sudo apt install cmake
 
 workflows:
   version: 2
+
   deps_build:
     jobs:
       - deps
-      - build
-          requires:
-              - deps
-          filters:
-            braches:
-              only: master
