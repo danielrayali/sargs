@@ -116,6 +116,98 @@ class Args {
     return value;
   }
 
+  bool GetAsUInt64(const std::string& flag, uint64_t& value) const {
+    if (flag.empty()) {
+      if (_exceptions_enabled)
+        throw SargsError("Flag query empty");
+      else
+        return false;
+    }
+
+    auto iter = _arguments.find(flag);
+    if (iter == _arguments.end())
+      return false;
+
+    const std::string value_str(iter->second);
+#if defined(__linux)
+    const uint64_t myvalue = std::strtoul(value_str.c_str(), nullptr, 0);
+#elif defined(_WIN32)
+    const uint64_t myvalue = std::strtoull(value_str.c_str(), nullptr, 0);
+#endif
+    const bool range_error = (errno == ERANGE);
+    if (range_error) {
+      if (_exceptions_enabled)
+        throw SargsError("Could not convert " +  value_str + " to uint64_t");
+      else
+        return false;
+    }
+
+    value = myvalue;
+    return true;
+  }
+
+  uint64_t GetAsUInt64(const std::string& flag) const {
+    uint64_t value;
+    if (!this->GetAsUInt64(flag, value)) {
+      if (_exceptions_enabled)
+        throw SargsError(flag + " was not specified");
+      else
+        return 0;
+    }
+    return value;
+  }
+
+  uint32_t GetAsUInt32(const std::string& flag) const {
+    uint64_t value;
+    if (!this->GetAsUInt64(flag, value)) {
+      if (_exceptions_enabled)
+        throw SargsError(flag + " was not specified");
+      else
+        return 0;
+    }
+    if (value > std::numeric_limits<uint32_t>::max()) {
+      if (_exceptions_enabled)
+        throw SargsError(flag + " was too large for uint32_t");
+      else
+        return 0;
+    }
+    return static_cast<uint32_t>(value);
+  }
+
+  uint16_t GetAsUInt16(const std::string& flag) const {
+    uint64_t value;
+    if (!this->GetAsUInt64(flag, value)) {
+      if (_exceptions_enabled)
+        throw SargsError(flag + " was not specified");
+      else
+        return 0;
+    }
+    if (value > std::numeric_limits<uint16_t>::max()) {
+      if (_exceptions_enabled)
+        throw SargsError(flag + " was too large for uint16_t");
+      else
+        return 0;
+    }
+    return static_cast<uint16_t>(value);
+  }
+
+  uint8_t GetAsUInt8(const std::string& flag) const {
+    uint64_t value;
+    if (!this->GetAsUInt64(flag, value)) {
+      if (_exceptions_enabled)
+        throw SargsError(flag + " was not specified");
+      else
+        return 0;
+    }
+    if (value > std::numeric_limits<uint8_t>::max()) {
+      if (_exceptions_enabled)
+        throw SargsError(flag + " was too large for uint8_t");
+      else
+        return 0;
+    }
+    return static_cast<uint8_t>(value);
+  }
+
   bool GetAsInt64(const std::string& flag, int64_t& value) const {
     if (flag.empty()) {
       if (_exceptions_enabled)
@@ -129,7 +221,11 @@ class Args {
       return false;
 
     const std::string value_str(iter->second);
+  #if defined(__linux)
     const int64_t myvalue = std::strtol(value_str.c_str(), nullptr, 0);
+  #elif defined(_WIN32)
+    const int64_t myvalue = std::strtoll(value_str.c_str(), nullptr, 0);
+  #endif
     const bool range_error = (errno == ERANGE);
     if (range_error) {
       if (_exceptions_enabled)
@@ -700,6 +796,22 @@ class Args {
 #define SARGS_GET_NONFLAGS() \
   sargs::Args::Default().GetNonFlags()
 
+// Get the value of a flag as an uint64_t
+#define SARGS_GET_UINT64(flag) \
+  sargs::Args::Default().GetAsUInt64(flag)
+
+// Get the value of a flag as an uint32_t
+#define SARGS_GET_UINT32(flag) \
+  sargs::Args::Default().GetAsUInt32(flag)
+
+// Get the value of a flag as an uint16_t
+#define SARGS_GET_UINT16(flag) \
+  sargs::Args::Default().GetAsUInt16(flag)
+
+// Get the value of a flag as an uint8_t
+#define SARGS_GET_UINT8(flag) \
+  sargs::Args::Default().GetAsUInt8(flag)
+
 // Get the value of a flag as an int64_t
 #define SARGS_GET_INT64(flag) \
   sargs::Args::Default().GetAsInt64(flag)
@@ -709,7 +821,7 @@ class Args {
   sargs::Args::Default().GetAsInt32(flag)
 
 // Get the value of a flag as an int16_t
-#define SARGS_GET_IN16(flag) \
+#define SARGS_GET_INT16(flag) \
   sargs::Args::Default().GetAsInt16(flag)
 
 // Get the value of a flag as an int8_t

@@ -11,6 +11,44 @@ static inline bool AssertFailed(const std::string& message) {
 
 #define Assert(x) ((x) || (AssertFailed(#x)))
 
+void TestUnsigned() {
+  cout << "TestUnsigned()...";
+
+  string str1 = "program";
+  string str2 = "-c=8446744073709551615";
+
+  char* argv[2] = { &str1.front(), &str2.front() };
+  Args args;
+  args.AddRequiredFlagValue("-c", "", "The dash c flag");
+
+  try { args.Initialize(2, argv); }
+  catch (SargsError& error) {
+    cerr << "fail" << endl;
+    throw;
+  }
+
+  string c_str = args.GetAsString("-c");
+  Assert(c_str == "8446744073709551615");
+  Assert(args.GetAsUInt64("-c") == 8446744073709551615);
+  try {
+    args.GetAsUInt32("-c");
+    cerr << "fail" << endl;
+    throw std::runtime_error("GetAsUInt32 failed");
+  } catch (SargsError& error) {}
+  try {
+    args.GetAsUInt16("-c");
+    cerr << "fail" << endl;
+    throw std::runtime_error("GetAsUInt16 failed");
+  } catch (SargsError& error) {}
+  try {
+    args.GetAsUInt8("-c");
+    cerr << "fail" << endl;
+    throw std::runtime_error("GetAsUInt8 failed");
+  } catch (SargsError& error) {}
+
+  cout << "pass" << endl;
+}
+
 void TestValues() {
   cout << "TestValues()...";
 
@@ -169,6 +207,7 @@ int main(int argc, char* argv[]) {
   TestOptional();
   TestNonFlags();
   TestFallback();
+  TestUnsigned();
 
   printf("\nTests complete\n");
   return 0;
