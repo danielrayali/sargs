@@ -4,8 +4,8 @@ jobs:
   deps:
     steps:
       - run:
-        name: Install CMake
-        command: sudo apt install cmake
+          name: Install CMake
+          command: sudo apt install cmake
   build:
     steps:
       - checkout
