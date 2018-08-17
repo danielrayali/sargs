@@ -5,17 +5,19 @@ jobs:
     machine:
       image: circleci/classic:latest
     steps:
-      - run: sudo apt install cmake
+      - run:
+          name: Install cmake
+          command: sudo apt install cmake
   build:
     machine:
       image: circleci/classic:latest
     steps:
       - run:
-        command: |
-          mkdir build
-          cd build
-          cmake ..
-          make
+          command: |
+            mkdir build
+            cd build
+            cmake ..
+            make
 
 workflows:
   version: 2
