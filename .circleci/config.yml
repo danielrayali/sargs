@@ -1,17 +1,15 @@
 version: 2
 
 jobs:
-  build:
+  deps:
     machine:
       image: circleci/classic:latest
     steps:
-      - run:
-        name: Install CMake
-        command: sudo apt install cmake
+      - run: sudo apt install cmake
 
 workflows:
   version: 2
 
   deps_build:
     jobs:
-      - build
+      - deps
