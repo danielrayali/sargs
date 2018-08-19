@@ -1,4 +1,4 @@
-# Simple Args
+# Simple Args [![Build Status](https://travis-ci.org/drali/sargs.svg?branch=master)](https://travis-ci.org/drali/sargs)
 
 Simple Args (sargs) is a header-only C++ arguments parser. I wrote this so I would never have to integrate with a complicated thirdparty argument parser or write my own again. It attempts to provide the bare minumum of features to keep it simple and integrate quickly into a new or existing project.
 
@@ -42,7 +42,7 @@ $ ./binary
 
 Must specify --foo or -f
 
-Usage:  <--bar> <--help|-h> --foo=value 
+Usage:  <--bar> <--help|-h> --foo=value
 
   Required flags:
     --foo=value/-f=value      The description of foo
