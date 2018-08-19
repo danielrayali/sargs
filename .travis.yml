@@ -16,3 +16,4 @@ script:
     - cd build
     - cmake ..
     - make
+    - test/sargs_test
