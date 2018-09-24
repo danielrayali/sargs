@@ -129,7 +129,7 @@ class Args {
       return false;
 
     const std::string value_str(iter->second);
-#if defined(__linux)
+#if defined(__linux) || defined(__clang__)
     const uint64_t myvalue = std::strtoul(value_str.c_str(), nullptr, 0);
 #elif defined(_WIN32)
     const uint64_t myvalue = std::strtoull(value_str.c_str(), nullptr, 0);
@@ -221,7 +221,7 @@ class Args {
       return false;
 
     const std::string value_str(iter->second);
-  #if defined(__linux)
+  #if defined(__linux) || defined(__clang__)
     const int64_t myvalue = std::strtol(value_str.c_str(), nullptr, 0);
   #elif defined(_WIN32)
     const int64_t myvalue = std::strtoll(value_str.c_str(), nullptr, 0);
