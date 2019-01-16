@@ -262,6 +262,11 @@ class Args {
         throw SargsError(flag + " is too large to convert to int32_t: " + std::to_string(value));
       else
         return 0;
+    } else if (value < std::numeric_limits<int32_t>::min()) {
+      if (_exceptions_enabled)
+        throw SargsError(flag + " was too low to convert to int32_t" + std::to_string(value));
+      else
+        return 0;
     }
     return static_cast<int32_t>(value);
   }

@@ -201,14 +201,41 @@ void TestFallback() {
   cout << "pass" << endl;
 }
 
+void TestInt32DownconvertLimit() {
+  cout << "TestInt32DownconvertLimit()...";
+
+  Args args;
+  args.AddOptionalFlagValue("-c", "", "");
+
+  string str1 = "program";
+  string str2 = "-c";
+  string str3 = "-2147483649";
+  char* argv[3] = { &str1.front(), &str2.front(), &str3.front() };
+  args.Initialize(3, argv);
+  
+  try { args.GetAsInt32("-c"); }
+  catch (SargsError& ex) {
+    cerr << "pass" << endl;
+    return;
+  }
+
+  cout << "fail" << endl;
+  throw std::runtime_error("TestInt32DownconvertLimit() failed");
+}
+
 int main(int argc, char* argv[]) {
+try {
   TestValues();
   TestAlias();
   TestOptional();
   TestNonFlags();
   TestFallback();
   TestUnsigned();
-
+  TestInt32DownconvertLimit();
+} catch (std::exception& ex) {
+  cerr << "\nFAIL\n" << endl;
+  return 1;
+}
   printf("\nTests complete\n");
   return 0;
 }

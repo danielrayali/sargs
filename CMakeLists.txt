@@ -30,6 +30,10 @@ if(CMAKE_COMPILER_IS_GNUCXX)
   add_definitions (-D_GLIBCXX_USE_CXX11_ABI=0)
 endif()
 
+if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+  set(CMAKE_CXX_FLAGS "-std=c++11 -g")
+endif()
+
 include_directories (src)
 
 #
