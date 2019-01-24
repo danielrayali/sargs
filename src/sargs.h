@@ -1,15 +1,7 @@
-/*
- * Copyright (c) 2017 drali. All rights reserved.
- *
- * This software is provided 'as-is', without any express or implied warranty.
- * In no event will the author be held liable for any damages arising from the use of this software.
- * Permission is granted to anyone to use this software for any purpose, including commercial
- * applications, and to alter it and redistribute it freely, subject to the following restrictions:
- *
- *  1. The origin of this software must not be misrepresented; you must not claim that you wrote the original software.
- *  2. If you use this software in a product, an acknowledgment in the product documentation would be appreciated but is not required.
- *  3. Altered source versions must be plainly marked as such, and must not be misrepresented as being the original software.
- */
+//
+// Copyright (c) 2017-2019 Daniel Ali. All rights reserved.
+// See LICENSE for details.
+//
 #pragma once
 
 #include <cerrno>
@@ -170,6 +162,11 @@ class Args {
         throw SargsError(flag + " was too large for uint32_t");
       else
         return 0;
+    } else if (value < std::numeric_limits<uint32_t>::min()) {
+      if (_exceptions_enabled)
+        throw SargsError(flag + " was too low for uint32_t");
+      else
+        return 0;
     }
     return static_cast<uint32_t>(value);
   }
@@ -284,6 +281,11 @@ class Args {
         throw SargsError(flag + " is too large to convert to int16_t: " + std::to_string(value));
       else
         return 0;
+    } else if (value < std::numeric_limits<int16_t>::min()) {
+      if (_exceptions_enabled)
+        throw SargsError(flag + " is too small to convert to int16_t: " + std::to_string(value));
+      else
+        return 0;
     }
     return static_cast<int16_t>(value);
   }
@@ -299,6 +301,11 @@ class Args {
     if (value > std::numeric_limits<int8_t>::max()) {
       if (_exceptions_enabled)
         throw SargsError(flag + " is too large to convert to int8_t: " + std::to_string(value));
+      else
+        return 0;
+    } else if (value < std::numeric_limits<int8_t>::min()) {
+      if (_exceptions_enabled)
+        throw SargsError(flag + " is too small to convert to int8_t: " + std::to_string(value));
       else
         return 0;
     }

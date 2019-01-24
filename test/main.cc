@@ -212,7 +212,7 @@ void TestInt32DownconvertLimit() {
   string str3 = "-2147483649";
   char* argv[3] = { &str1.front(), &str2.front(), &str3.front() };
   args.Initialize(3, argv);
-  
+
   try { args.GetAsInt32("-c"); }
   catch (SargsError& ex) {
     cerr << "pass" << endl;
@@ -221,6 +221,50 @@ void TestInt32DownconvertLimit() {
 
   cout << "fail" << endl;
   throw std::runtime_error("TestInt32DownconvertLimit() failed");
+}
+
+void TestInt16DownconvertLimit() {
+  cout << "TestInt16DownconvertLimit()...";
+
+  Args args;
+  args.AddOptionalFlagValue("-c", "", "");
+
+  string str1 = "program";
+  string str2 = "-c";
+  string str3 = "-32769";
+  char* argv[3] = { &str1.front(), &str2.front(), &str3.front() };
+  args.Initialize(3, argv);
+
+  try { args.GetAsInt16("-c"); }
+  catch (SargsError& ex) {
+    cerr << "pass" << endl;
+    return;
+  }
+
+  cout << "fail" << endl;
+  throw std::runtime_error("TestInt16DownconvertLimit() failed");
+}
+
+void TestInt8DownconvertLimit() {
+  cout << "TestInt8DownconvertLimit()...";
+
+  Args args;
+  args.AddOptionalFlagValue("-c", "", "");
+
+  string str1 = "program";
+  string str2 = "-c";
+  string str3 = "-256";
+  char* argv[3] = { &str1.front(), &str2.front(), &str3.front() };
+  args.Initialize(3, argv);
+
+  try { args.GetAsInt8("-c"); }
+  catch (SargsError& ex) {
+    cerr << "pass" << endl;
+    return;
+  }
+
+  cout << "fail" << endl;
+  throw std::runtime_error("TestInt8DownconvertLimit() failed");
 }
 
 int main(int argc, char* argv[]) {
@@ -232,6 +276,8 @@ try {
   TestFallback();
   TestUnsigned();
   TestInt32DownconvertLimit();
+  TestInt16DownconvertLimit();
+  TestInt8DownconvertLimit();
 } catch (std::exception& ex) {
   cerr << "\nFAIL\n" << endl;
   return 1;

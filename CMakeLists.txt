@@ -10,7 +10,7 @@ project (SimpleArgs)
 set(CMAKE_VERBOSE_MAKEFILE on)
 
 #
-# MSVC compiler flags
+# Compiler flags
 #
 
 if(MSVC)
@@ -20,19 +20,13 @@ if(MSVC)
   set(CMAKE_CXX_FLAGS_MINSIZEREL      "/MT /O1 /Ob1 /D NDEBUG")
   set(CMAKE_CXX_FLAGS_RELEASE         "/MT /O2 /Ob2 /D NDEBUG")
   set(CMAKE_CXX_FLAGS_RELWITHDEBINFO  "/MT /Zi /O2 /Ob1 /D NDEBUG")
-endif()
-
-#
-# gcc/g++ compiler flags
-#
-if(CMAKE_COMPILER_IS_GNUCXX)
-  set(CMAKE_CXX_FLAGS "-std=c++11 -g")
-  add_definitions (-D_GLIBCXX_USE_CXX11_ABI=0)
-endif()
-
-if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-  set(CMAKE_CXX_FLAGS "-std=c++11 -g")
-endif()
+else ()
+  # Assuming gcc/g++ compiler flags
+  set(CMAKE_CXX_FLAGS "-std=c++11 -g -Wall -Wextra -pedantic")
+  if (CMAKE_COMPILER_IS_GNUCXX)
+    add_definitions (-D_GLIBCXX_USE_CXX11_ABI=0)
+  endif ()
+endif ()
 
 include_directories (src)
 
