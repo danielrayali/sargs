@@ -267,7 +267,7 @@ void TestInt8DownconvertLimit() {
   throw std::runtime_error("TestInt8DownconvertLimit() failed");
 }
 
-int main(int argc, char* argv[]) {
+int main(int, char* []) {
 try {
   TestValues();
   TestAlias();

@@ -437,7 +437,6 @@ class Args {
   size_t _nonflags_required = 0;
   bool _help_enabled = true;
   bool _exit_enabled = true;
-  bool _throw_on_validation = false;
   bool _exceptions_enabled = true;
   bool _usage_enabled = true;
 
@@ -485,7 +484,7 @@ class Args {
     return "";
   }
 
-  std::string CheckForValues(const std::vector<Argument>& to_check, const bool required) {
+  std::string CheckForValues(const std::vector<Argument>& to_check) {
     for (auto iter : to_check) {
       auto arg_iter = _arguments.find(iter.flag);
       if (arg_iter != _arguments.end() && !iter.alias.empty()) {
@@ -605,9 +604,9 @@ class Args {
     else if (_nonflags.size() != _nonflags_required)
       return "Unknown arguments or user must specify " + std::to_string(_nonflags_required) + " non-flags";
 
-    std::string result = this->CheckForValues(_required, true);
+    std::string result = this->CheckForValues(_required);
     if (result.empty())
-      result = this->CheckForValues(_optional, false);
+      result = this->CheckForValues(_optional);
     if (result.empty())
       result = this->CheckForMissing(_required);
     return result;
