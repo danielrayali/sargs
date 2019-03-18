@@ -312,8 +312,29 @@ class Args {
     return static_cast<int8_t>(value);
   }
 
+  std::string FindAlternative(const std::string& flag) const {
+    for (auto iter : _required) {
+      if (iter.flag == flag)
+        return iter.alias;
+      if (iter.alias == flag)
+        return iter.flag;
+    }
+    for (auto iter : _optional) {
+      if (iter.flag == flag)
+        return iter.alias;
+      if (iter.alias == flag)
+        return iter.flag;
+    }
+    return "";
+  }
+
   bool Has(const std::string& flag) const {
-    return _arguments.find(flag) != _arguments.end();
+    std::string alternative = this->FindAlternative(flag);
+    for (auto iter : _arguments) {
+      if ((iter.first == flag) || (iter.first == alternative))
+        return true;
+    }
+    return false;
   }
 
   std::string GetNonFlag(const size_t index) const {

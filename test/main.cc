@@ -267,6 +267,34 @@ void TestInt8DownconvertLimit() {
   throw std::runtime_error("TestInt8DownconvertLimit() failed");
 }
 
+void TestBothFlagsAvailable() {
+  cout << "TestBothFlagsAvailable()...";
+
+  Args args;
+  args.AddOptionalFlag("--long", "-l", "");
+
+  string str1 = "program";
+  string short_arg = "-l";
+  char* argv_one[2] = { &str1.front(), &short_arg.front() };
+  args.Initialize(2, argv_one);
+
+  if (!args.Has("--long")) {
+    cerr << "fail1" << endl;
+    throw std::runtime_error("TestBothFlagsAvailable() failed");
+  }
+
+  string long_arg = "--long";
+  char* argv_two[2] = { &str1.front(), &long_arg.front() };
+  args.Initialize(2, argv_two);
+
+  if (!args.Has("-l")) {
+    cerr << "fail2" << endl;
+    throw std::runtime_error("TestBothFlagsAvailable() failed");
+  }
+
+  cout << "pass" << endl;
+}
+
 int main(int, char* []) {
 try {
   TestValues();
@@ -278,6 +306,7 @@ try {
   TestInt32DownconvertLimit();
   TestInt16DownconvertLimit();
   TestInt8DownconvertLimit();
+  TestBothFlagsAvailable();
 } catch (std::exception& ex) {
   cerr << "\nFAIL\n" << endl;
   return 1;
