@@ -439,8 +439,12 @@ class Args {
         this->PrintUsage(std::cout);
       }
 
-      if (_exit_enabled)
-        exit(0);
+      if (_exit_enabled) {
+        if (result.empty())
+          exit(0);
+        else
+          exit(1);
+      }
     }
 
     this->AddFallbackValues();
