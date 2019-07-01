@@ -117,6 +117,10 @@ By default, errors encountered during initialization will print usage and exit w
 
 Use ```SARGS_REQUIRE_NONFLAGS()``` to ensure the user is required to set a specific number of non-flags. These can be iterated over the vector of strings returned by ```SARGS_GET_NONFLAGS()``` or accessed by the index it was specified with ```SARGS_GET_NONFLAG(index)```.
 
+### Exit on error
+
+Sargs will exit on error while parsing by default. If there is an error exit will be called with a non-zero exit code. This can be disabled using ```SARGS_DISABLE_EXIT()```.
+
 ## Bugs/Comments
 
 Please open github issues for this software or create a pull request if there is something that needs changing. All are welcome!
