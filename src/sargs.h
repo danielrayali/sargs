@@ -411,6 +411,10 @@ class Args {
     _desc_start = column;
   }
 
+  void SetDescWidth(const unsigned width) {
+    _desc_width = width;
+  }
+
   std::string GetPreamble() const {
     return _preamble;
   }
@@ -469,6 +473,7 @@ class Args {
   bool _exceptions_enabled = true;
   bool _usage_enabled = true;
   unsigned _desc_start = 30;
+  unsigned _desc_width = 50;
 
   bool CheckIfNonValueFlag(const std::string& flag) const {
     for (auto iter : _required) {
@@ -643,39 +648,37 @@ class Args {
   }
 
   size_t DetermineNumCharsToWrite(const std::string& description) const {
-    size_t location = 49;
+    size_t location = _desc_width - 1;
     while (std::isalpha(description[location]) && location > 0) --location;
-    if (location == 0 && std::isalpha(description[location])) return 50;
+    if (location == 0 && std::isalpha(description[location])) return _desc_width;
     return location + 1;
   }
 
   std::string FormatDescription(const std::string& description) const {
-    if (description.size() <= 50) return description;
+    if (description.size() <= _desc_width) return description;
     std::stringstream stream;
-    stream.width(50);
     size_t count = 0;
-    while (count < (description.size() - 50)) {
+    while (count < (description.size() - _desc_width)) {
       size_t to_write = this->DetermineNumCharsToWrite(description.substr(count));
 
       // Determine where to start writing the next line
       size_t skip = 0;
-      while (std::isblank(description[count + skip]) && skip < 50)
+      while (std::isblank(description[count + skip]) && (skip < _desc_width))
         ++skip;
 
       // Don't write a blank line
       count += skip;
-      if (skip == 50)
+      if (skip == _desc_width)
         continue;
 
-      stream.write(&description[count], to_write);
-      stream << "\n                              ";
+      stream << description.substr(count, to_write) << "\n" << std::string(_desc_start, ' ');
       count += to_write;
     }
 
     // Determine where to start writing the next line
     size_t skip = 0;
-    while (std::isblank(description[count]) && count < 50) ++skip;
-    if (skip != 50) {
+    while (std::isblank(description[count]) && count < _desc_width) ++skip;
+    if (skip != _desc_width) {
       count += skip;
       stream.write(&description[count], int(description.size() - count));
     }
@@ -898,8 +901,12 @@ class Args {
 #define SARGS_DISABLE_USAGE() \
   sargs::Args::Default().DisableUsage()
 
-// Sets the start column of each description in the usage generator
+// Sets the start column of each description in the usage generator. Default: 30
 #define SARGS_SET_DESC_START_COLUMN(column) \
   sargs::Args::Default().SetDescStartColumn(column)
+
+// Sets the max width of a flag description before wrapping. Default: 50
+#define SARGS_SET_DESC_WIDTH(width) \
+  sargs::Args::Default().SetDescWidth(width)
 
 }  // namespace sargs
