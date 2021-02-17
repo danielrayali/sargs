@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2017-2019 Daniel Ali. All rights reserved.
+// Copyright (c) 2017-2021 Daniel Ali. All rights reserved.
 // See LICENSE for details.
 //
 #pragma once
@@ -434,9 +434,9 @@ class Args {
 
     if (usage) {
       if (_usage_enabled) {
-        if (!result.empty())
-          std::cout << "\n" << result << "\n"  << std::endl;
         this->PrintUsage(std::cout);
+        if (!result.empty())
+          std::cout << "\nError: " << result << "\n"  << std::endl;
       }
 
       if (_exit_enabled) {
