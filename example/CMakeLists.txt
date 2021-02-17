@@ -17,3 +17,6 @@ target_link_libraries (simple)
 
 add_executable (optional optional.cc)
 target_link_libraries (optional)
+
+add_executable (long long.cc)
+target_link_libraries (long)
