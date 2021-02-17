@@ -407,6 +407,10 @@ class Args {
     _usage_enabled = false;
   }
 
+  void SetDescStartColumn(const unsigned column) {
+    _desc_start = column;
+  }
+
   std::string GetPreamble() const {
     return _preamble;
   }
@@ -464,6 +468,7 @@ class Args {
   bool _exit_enabled = true;
   bool _exceptions_enabled = true;
   bool _usage_enabled = true;
+  unsigned _desc_start = 30;
 
   bool CheckIfNonValueFlag(const std::string& flag) const {
     for (auto iter : _required) {
@@ -692,7 +697,7 @@ class Args {
           flag_ids << "=value";
       }
 
-      output << std::left << std::setw(30) << flag_ids.str();
+      output << std::left << std::setw(_desc_start) << flag_ids.str();
       output << std::left << this->FormatDescription(arguments[i].description);
       output << '\n';
     }
@@ -892,5 +897,9 @@ class Args {
 // Disables printing usage if an error is encountered during initialization
 #define SARGS_DISABLE_USAGE() \
   sargs::Args::Default().DisableUsage()
+
+// Sets the start column of each description in the usage generator
+#define SARGS_SET_DESC_START_COLUMN(column) \
+  sargs::Args::Default().SetDescStartColumn(column)
 
 }  // namespace sargs
